@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sei offline · Christmas Wonderland</title>
+    <meta name="theme-color" content="#0b2e1a" />
+    <style>
+      :root {
+        color-scheme: dark;
+        --pine-950: #041f12;
+        --pine-900: #0b2e1a;
+        --pine-700: #1a5c38;
+        --gold: #d4a843;
+        --gold-light: #f0d78c;
+        --cream: #f5f0e6;
+        --cream-soft: rgba(245, 240, 230, 0.72);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+        color: var(--cream);
+        background:
+          radial-gradient(circle at 50% 12%, rgba(212, 168, 67, 0.18), transparent 55%),
+          linear-gradient(160deg, var(--pine-900), var(--pine-950));
+      }
+
+      main {
+        width: 100%;
+        max-width: 520px;
+        border: 1px solid rgba(212, 168, 67, 0.35);
+        border-radius: 28px;
+        padding: 40px 28px 32px;
+        text-align: center;
+        background: rgba(4, 31, 18, 0.72);
+        box-shadow: 0 0 40px rgba(212, 168, 67, 0.18);
+      }
+
+      .badge {
+        width: 88px;
+        height: 88px;
+        margin: 0 auto 18px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        font-size: 42px;
+        background: rgba(26, 92, 56, 0.55);
+        border: 1px solid rgba(212, 168, 67, 0.4);
+      }
+
+      h1 {
+        margin: 0 0 10px;
+        font-size: 1.6rem;
+        color: var(--gold-light);
+        letter-spacing: -0.01em;
+      }
+
+      p {
+        margin: 0 0 14px;
+        line-height: 1.6;
+        color: var(--cream-soft);
+        font-size: 0.98rem;
+      }
+
+      .note {
+        margin-top: 22px;
+        padding: 14px 16px;
+        border-radius: 16px;
+        border: 1px solid rgba(165, 216, 255, 0.25);
+        background: rgba(28, 61, 90, 0.35);
+        color: #cfe8ff;
+        font-size: 0.86rem;
+        text-align: left;
+      }
+
+      button {
+        margin-top: 24px;
+        padding: 12px 26px;
+        border: 0;
+        border-radius: 999px;
+        background: var(--gold);
+        color: var(--pine-950);
+        font-size: 1rem;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      button:hover {
+        background: var(--gold-light);
+      }
+
+      footer {
+        margin-top: 26px;
+        font-size: 0.75rem;
+        color: rgba(245, 240, 230, 0.45);
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          animation: none !important;
+          transition: none !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="badge" aria-hidden="true">🌨️</div>
+      <h1>Il villaggio è avvolto nella neve</h1>
+      <p>
+        Non riusciamo a raggiungere Christmas Wonderland. Controlla la
+        connessione e riprova: il calendario e i tuoi ricordi ti aspettano.
+      </p>
+      <div class="note">
+        <strong>Disponibile offline:</strong> questa pagina e le risorse
+        dell'app già scaricate. Aprire una casella, verificare una password,
+        rispondere a un quiz o aggiornare i progressi richiede una connessione
+        attiva (i progressi non vengono mai modificati offline).
+      </div>
+      <button type="button" onclick="location.reload()">Riprova</button>
+      <footer>Christmas Wonderland · Nessun dato privato è memorizzato offline</footer>
+    </main>
+  </body>
+</html>
