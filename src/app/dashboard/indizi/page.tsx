@@ -3,6 +3,8 @@ import { getCluesData } from "@/lib/services/memories";
 import { MemoryShell } from "@/components/memories/MemoryShell";
 import { CluesView } from "@/components/memories/CluesView";
 
+export const instant = false;
+
 export default async function CluesPage() {
   const user = await requireUser();
   const data = await getCluesData(user);

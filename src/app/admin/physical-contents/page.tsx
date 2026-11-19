@@ -5,6 +5,8 @@ import { CrudManager } from "@/components/admin/CrudManager";
 import { PasswordManager } from "@/components/admin/PasswordManager";
 import { SectionHeader } from "@/components/admin/ui";
 
+export const instant = false;
+
 export default async function AdminPhysicalContentsPage() {
   await requireAdmin();
   const [rows, lookups, capabilities] = await Promise.all([

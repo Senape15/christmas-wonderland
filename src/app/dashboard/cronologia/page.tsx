@@ -3,6 +3,8 @@ import { getTimelineData } from "@/lib/services/memories";
 import { MemoryShell } from "@/components/memories/MemoryShell";
 import { TimelineView } from "@/components/memories/TimelineView";
 
+export const instant = false;
+
 export default async function TimelinePage() {
   const user = await requireUser();
   const data = await getTimelineData(user);

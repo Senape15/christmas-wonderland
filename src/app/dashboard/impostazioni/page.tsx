@@ -4,6 +4,8 @@ import { publicVapidKey } from "@/lib/push/config";
 import { MemoryShell } from "@/components/memories/MemoryShell";
 import { NotificationSettings } from "@/components/pwa/NotificationSettings";
 
+export const instant = false;
+
 export const metadata = {
   title: "Impostazioni notifiche · Christmas Wonderland",
 };

@@ -43,4 +43,17 @@ describe("validazione admin", () => {
     const resource = getResource("users")!;
     expect(validateAdminValues(resource, { role: "superadmin" }).success).toBe(false);
   });
+
+  it("rifiuta URL esterni nelle notifiche programmate", () => {
+    const resource = getResource("scheduled_notifications", { phase7: true })!;
+    const base = { title: "Test", body: "Testo", kind: "special" };
+
+    expect(validateAdminValues(resource, { ...base, url: "/dashboard" }).success).toBe(true);
+    expect(
+      validateAdminValues(resource, { ...base, url: "https://esempio.it" }).success
+    ).toBe(false);
+    expect(
+      validateAdminValues(resource, { ...base, url: "//esempio.it" }).success
+    ).toBe(false);
+  });
 });

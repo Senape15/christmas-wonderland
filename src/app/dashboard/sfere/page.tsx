@@ -3,6 +3,8 @@ import { getCollectionData } from "@/lib/services/memories";
 import { MemoryShell } from "@/components/memories/MemoryShell";
 import { CollectionView } from "@/components/memories/CollectionView";
 
+export const instant = false;
+
 export default async function SpheresPage() {
   const user = await requireUser();
   const data = await getCollectionData(user);

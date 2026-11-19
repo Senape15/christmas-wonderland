@@ -326,7 +326,7 @@ export function NotificationSettings({
               value={preferences.preferredTime}
               disabled={disabled}
               onChange={(event) => setPreference("preferredTime", event.target.value)}
-              className="w-full rounded-lg border border-cream-300/20 bg-pine-950/70 px-3 py-2 text-sm text-cream-50 outline-none focus:border-gold/60"
+              className="w-full rounded-lg border border-cream-300/20 bg-pine-950/70 px-3 py-2 text-sm text-cream-50 outline-none focus:border-gold/60 focus-visible:ring-2 focus-visible:ring-gold/60"
             />
           </label>
           <label className="block">
@@ -338,7 +338,7 @@ export function NotificationSettings({
               value={preferences.quietHoursStart}
               disabled={disabled}
               onChange={(event) => setPreference("quietHoursStart", event.target.value)}
-              className="w-full rounded-lg border border-cream-300/20 bg-pine-950/70 px-3 py-2 text-sm text-cream-50 outline-none focus:border-gold/60"
+              className="w-full rounded-lg border border-cream-300/20 bg-pine-950/70 px-3 py-2 text-sm text-cream-50 outline-none focus:border-gold/60 focus-visible:ring-2 focus-visible:ring-gold/60"
             />
           </label>
           <label className="block">
@@ -350,7 +350,7 @@ export function NotificationSettings({
               value={preferences.quietHoursEnd}
               disabled={disabled}
               onChange={(event) => setPreference("quietHoursEnd", event.target.value)}
-              className="w-full rounded-lg border border-cream-300/20 bg-pine-950/70 px-3 py-2 text-sm text-cream-50 outline-none focus:border-gold/60"
+              className="w-full rounded-lg border border-cream-300/20 bg-pine-950/70 px-3 py-2 text-sm text-cream-50 outline-none focus:border-gold/60 focus-visible:ring-2 focus-visible:ring-gold/60"
             />
           </label>
         </div>

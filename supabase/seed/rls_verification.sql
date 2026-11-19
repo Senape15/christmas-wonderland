@@ -99,9 +99,21 @@ select count(*) as other_secret_messages
 from public.secret_messages where user_id = '11111111-1111-1111-1111-111111111111';
 -- expected: 0
 
--- 6. User CANNOT promote themselves to admin (RLS update check)
-update public.users set role = 'admin' where id = '22222222-2222-2222-2222-222222222222';
--- expected: 0 rows affected (RLS blocks: with check fails)
+-- 6. User CANNOT promote themselves to admin.
+--     La policy della 001 da sola NON basta: serve la migrazione 008.
+--     Il test passa solo se il trigger blocca l'UPDATE con un errore.
+do $$
+begin
+  update public.users set role = 'admin' where id = '22222222-2222-2222-2222-222222222222';
+  raise exception 'FALLIMENTO: auto-promozione ad admin riuscita (migrazione 008 non applicata?)';
+exception
+  when others then
+    if sqlerrm like 'FALLIMENTO:%' then
+      raise;
+    end if;
+    raise notice 'OK: auto-promozione bloccata';
+end $$;
+-- expected: NOTICE "OK: auto-promozione bloccata", nessun errore FALLIMENTO
 
 -- Reset role for clean state
 select set_config('role', 'service_role', true);

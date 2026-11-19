@@ -2,10 +2,11 @@
 
 Un calendario dell'Avvento interattivo ambientato in un villaggio natalizio navigabile, installabile come PWA e con notifiche Web Push.
 
-**Fase 7 – PWA, notifiche Web Push e installazione completata nel codice.** Le
-migrazioni 001–005 sono applicate sul progetto Supabase. Le migrazioni **006 e
-007** sono pronte ma **non sono state applicate**: vanno eseguite manualmente
-nel SQL Editor (vedi sotto). Il delivery reale delle notifiche non è stato
+**Fase 8 – collaudo finale completato nel codice.** Le migrazioni **001–007
+risultano strutturalmente applicate** sul progetto Supabase (verifica in sola
+lettura del 2026-11-19). La migrazione **008_role_security.sql** è scritta ma
+**non applicata**: contiene le correzioni di sicurezza dei ruoli e va eseguita
+manualmente dopo autorizzazione. Il delivery reale delle notifiche non è stato
 verificato: mancano chiavi VAPID e scheduler.
 
 ## Stack
@@ -110,26 +111,31 @@ npm run dev                        # http://localhost:3000
    scritture client sui progressi, crea `final_box_completions`, impedisce i
    quiz corretti duplicati e allinea le date di sblocco alla mezzanotte di
    `Europe/Rome`. **È già applicata sul progetto attuale.**
-4. **Fase 6 (manuale, non ancora eseguita):** esegui
+4. **Fase 6 (risulta applicata):** per un nuovo ambiente esegui
    `supabase/migrations/006_memories_and_collections.sql`. Aggiunge le tabelle
    `memory_entries` e `diary_events`, i metadati collezionistici, il collegamento
    tra scatola finale e regalo fisico e rimuove le scritture client sulle sfere.
    È additiva e idempotente. Vedi [docs/SUPABASE_SETUP.md](./docs/SUPABASE_SETUP.md).
-5. **Fase 7 (manuale, non ancora eseguita):** esegui
+5. **Fase 7 (risulta applicata):** per un nuovo ambiente esegui
    `supabase/migrations/007_push_notifications.sql`. Aggiunge preferenze e log
    delle consegne, estende le subscription e le notifiche programmate. È
    additiva e idempotente. Poi configura le chiavi VAPID e lo scheduler come
    descritto in [docs/SUPABASE_SETUP.md](./docs/SUPABASE_SETUP.md) §7.
-6. In *Authentication → Providers* attiva Email e configura gli URL:
+6. **Fase 8 (manuale, NON applicata):** esegui
+   `supabase/migrations/008_role_security.sql` dopo aver fatto il backup.
+   Blocca l'auto-promozione ad admin e limita la simulazione al proprio admin.
+7. In *Authentication → Providers* attiva Email e configura gli URL:
    - Site URL: `http://localhost:3000`
    - Redirect URLs: `http://localhost:3000/api/auth/callback`
-7. Copia *Project URL* e *anon public key* in `.env.local`.
-8. Copia la *service_role key* in `SUPABASE_SERVICE_ROLE_KEY` (mai nel client).
-9. Genera le chiavi VAPID con `npx web-push generate-vapid-keys` e imposta
+8. Copia *Project URL* e *anon public key* in `.env.local`.
+9. Copia la *service_role key* in `SUPABASE_SERVICE_ROLE_KEY` (mai nel client).
+10. Genera le chiavi VAPID con `npx web-push generate-vapid-keys` e imposta
    `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` e `VAPID_SUBJECT`.
    Genera anche `PUSH_SCHEDULER_SECRET` per l'endpoint cron.
 
-Vedi [ENVIRONMENT.md](./ENVIRONMENT.md) e [docs/](./docs/) per i dettagli.
+Vedi [ENVIRONMENT.md](./ENVIRONMENT.md), [docs/RELEASE.md](./docs/RELEASE.md)
+(pubblicazione), [docs/PWA_INSTALL.md](./docs/PWA_INSTALL.md) (installazione
+delle PWA) e [docs/](./docs/) per i dettagli.
 
 ## Struttura del progetto
 
@@ -226,12 +232,16 @@ docs/               Documentazione tecnica
   `/admin`, `/api` né risposte Supabase; dopo il logout non restano dati
   privati sul dispositivo. Le notifiche automatiche considerano solo giorni
   già sbloccati e non anticipano il finale.
+- **Fase 8:** la migrazione 008 (non applicata) blocca l'auto-promozione ad
+  admin e vincola la simulazione al proprio admin; le notifiche programmate
+  accettano solo percorsi interni, il cron confronta il segreto su digest a
+  lunghezza fissa e il logout via API disattiva i dispositivi push.
 - Nessuna credenziale predefinita; nessun dato sensibile nel bundle client.
 
 ## Test
 
 ```bash
-npm test          # Vitest: 271 test (utils, calendario, villaggio, admin, Fase 5, Fase 6, Fase 7)
+npm test          # Vitest: 290 test (utils, calendario, villaggio, admin, Fase 5, Fase 6, Fase 7, Fase 8)
 npm run lint
 npm run typecheck
 npm run build

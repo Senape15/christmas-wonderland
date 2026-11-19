@@ -13,7 +13,8 @@ import {
   isNotificationDue,
   isWithinSendWindow,
   normalizePreferences,
-  scheduledDedupeKey,
+  resolveScheduledDeliveryStatus,
+  scheduledJobDedupeKey,
   testDedupeKey,
   toLocalParts,
 } from "./rules";
@@ -481,6 +482,7 @@ async function sendScheduledNotification(
     now: Date;
     attempt: number;
     ignoreWindow: boolean;
+    resend?: boolean;
     common?: Awaited<ReturnType<typeof loadCommon>>;
   }
 ): Promise<SendScheduledResult> {
@@ -533,7 +535,12 @@ async function sendScheduledNotification(
         body,
         url,
         tag: `notification-${notification.id}`,
-        dedupeKey: scheduledDedupeKey(notification.id, options.attempt, subscription.id),
+        dedupeKey: scheduledJobDedupeKey(
+          notification.id,
+          subscription.id,
+          Boolean(options.resend),
+          options.attempt
+        ),
         notificationId: notification.id,
       },
       deliverySummary
@@ -541,27 +548,13 @@ async function sendScheduledNotification(
   }
 
   const failed = deliverySummary.failed + deliverySummary.expired;
-  let status: string;
-  let lastError: string | null = null;
-  let attempts = options.attempt;
-
-  if (deliverySummary.sent > 0) {
-    status = "sent";
-  } else if (failed > 0) {
-    status = "failed";
-    attempts = Math.min(options.attempt + 1, MAX_DELIVERY_ATTEMPTS);
-    lastError =
-      deliverySummary.errors[0] ??
-      "Invio non riuscito. Controlla le chiavi VAPID e i dispositivi iscritti.";
-  } else if (eligible === 0) {
-    status = "skipped";
-    lastError =
-      "Nessun destinatario idoneo (pubblico, preferenze o dispositivi).";
-  } else {
-    // Destinatari presenti ma nessun invio effettuato (retry o finestra).
-    status = "pending";
-    lastError = "Retry programmato: nessun invio in questo ciclo.";
-  }
+  const resolved = resolveScheduledDeliveryStatus({
+    sent: deliverySummary.sent,
+    failed,
+    eligible,
+    attempt: options.attempt,
+  });
+  const { status, attempts, lastError } = resolved;
 
   const update = await supabase
     .from("scheduled_notifications")
@@ -635,7 +628,12 @@ export async function dispatchNotificationNow(
     supabase,
     createWebPushSender(config),
     row,
-    { now: options.now ?? new Date(), attempt, ignoreWindow: true }
+    {
+      now: options.now ?? new Date(),
+      attempt,
+      ignoreWindow: true,
+      resend: options.resend,
+    }
   );
 
   if (result.error) {

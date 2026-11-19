@@ -7,8 +7,10 @@ import {
   dailyDedupeKey,
   describeDevice,
   isNotificationDue,
+  isPreferredTimeSendable,
   isQuietHour,
   isReminderDue,
+  isSafeInternalUrl,
   isWithinSendWindow,
   maskEndpoint,
   normalizePreferences,
@@ -16,7 +18,9 @@ import {
   parseTimeOfDay,
   preferenceEnabledForKind,
   reminderDedupeKey,
+  resolveScheduledDeliveryStatus,
   scheduledDedupeKey,
+  scheduledJobDedupeKey,
   testDedupeKey,
   toLocalParts,
 } from "./rules";
@@ -166,6 +170,31 @@ describe("promemoria", () => {
       isReminderDue(now, prefs({ preferredTime: "08:00", quietHoursStart: "12:00", quietHoursEnd: "18:00" }))
     ).toBe(false);
   });
+
+  it("gestisce un orario preferito a mezzanotte senza bloccare il promemoria", () => {
+    // 03:00 a Roma, preferito 23:00: sono passate 4 ore "circolari".
+    expect(
+      isReminderDue(
+        new Date("2026-12-10T02:00:00.000Z"),
+        prefs({ preferredTime: "23:00", quietHoursStart: "12:00", quietHoursEnd: "13:00" })
+      )
+    ).toBe(true);
+  });
+});
+
+describe("isPreferredTimeSendable", () => {
+  it("rifiuta un orario preferito dentro le ore di silenzio", () => {
+    expect(
+      isPreferredTimeSendable(
+        prefs({ preferredTime: "23:00", quietHoursStart: "22:00", quietHoursEnd: "07:00" })
+      )
+    ).toBe(false);
+    expect(
+      isPreferredTimeSendable(
+        prefs({ preferredTime: "08:00", quietHoursStart: "22:00", quietHoursEnd: "07:00" })
+      )
+    ).toBe(true);
+  });
 });
 
 describe("chiavi di deduplica", () => {
@@ -174,6 +203,13 @@ describe("chiavi di deduplica", () => {
     expect(reminderDedupeKey("2026-12-10", "sub-1")).toBe("reminder:2026-12-10:sub-1");
     expect(scheduledDedupeKey("notif-1", 2, "sub-1")).toBe(
       "scheduled:notif-1:2:sub-1"
+    );
+    // I retry automatici non cambiano chiave: solo il "Reinvia" la cambia.
+    expect(scheduledJobDedupeKey("notif-1", "sub-1", false, 3)).toBe(
+      "scheduled:notif-1:0:sub-1"
+    );
+    expect(scheduledJobDedupeKey("notif-1", "sub-1", true, 3)).toBe(
+      "scheduled:notif-1:3:sub-1"
     );
     expect(testDedupeKey(new Date("2026-12-10T12:00:00.000Z"), "sub-1")).toBe(
       "test:1796904000000:sub-1"
@@ -224,6 +260,20 @@ describe("isNotificationDue", () => {
   it("un giorno non ancora sbloccato non è dovuto", () => {
     expect(isNotificationDue({ ...base, dayNumber: 11 }, now, unlocked)).toBe(false);
     expect(isNotificationDue({ ...base, dayNumber: 10 }, now, unlocked)).toBe(true);
+  });
+
+  it("non anticipa un giorno futuro anche con una data programmata passata", () => {
+    expect(
+      isNotificationDue(
+        {
+          ...base,
+          dayNumber: 11,
+          scheduledFor: "2026-12-09T09:00:00.000Z",
+        },
+        now,
+        unlocked
+      )
+    ).toBe(false);
   });
 
   it("non reinserisce notifiche già inviate, scartate o esaurite", () => {
@@ -321,5 +371,51 @@ describe("normalizePreferences", () => {
     expect(normalized.quietHoursStart).toBe(DEFAULT_NOTIFICATION_PREFERENCES.quietHoursStart);
     expect(normalized.timezone).toBe(DEFAULT_NOTIFICATION_PREFERENCES.timezone);
     expect(normalized.dailyReminders).toBe(true);
+  });
+});
+
+describe("resolveScheduledDeliveryStatus", () => {
+  it("segna come inviata solo se tutti i dispositivi sono raggiunti", () => {
+    expect(
+      resolveScheduledDeliveryStatus({ sent: 2, failed: 0, eligible: 2, attempt: 0 })
+    ).toMatchObject({ status: "sent", attempts: 0, lastError: null });
+  });
+
+  it("resta ritentabile se un dispositivo fallisce pur essendo altri raggiunti", () => {
+    const result = resolveScheduledDeliveryStatus({
+      sent: 1,
+      failed: 1,
+      eligible: 2,
+      attempt: 0,
+    });
+    expect(result.status).toBe("failed");
+    expect(result.attempts).toBe(1);
+    expect(result.lastError).toContain("1 dispositivi");
+  });
+
+  it("non supera il numero massimo di tentativi", () => {
+    expect(
+      resolveScheduledDeliveryStatus({
+        sent: 0,
+        failed: 1,
+        eligible: 1,
+        attempt: MAX_DELIVERY_ATTEMPTS - 1,
+      }).attempts
+    ).toBe(MAX_DELIVERY_ATTEMPTS);
+  });
+});
+
+describe("isSafeInternalUrl", () => {
+  it("accetta solo percorsi interni", () => {
+    expect(isSafeInternalUrl("/dashboard")).toBe(true);
+    expect(isSafeInternalUrl("/dashboard?giorno=1")).toBe(true);
+  });
+
+  it("rifiuta URL assoluti, protocol-relative e caratteri di escape", () => {
+    expect(isSafeInternalUrl("https://esempio.it")).toBe(false);
+    expect(isSafeInternalUrl("//esempio.it")).toBe(false);
+    expect(isSafeInternalUrl("/\\esempio.it")).toBe(false);
+    expect(isSafeInternalUrl("/dashboard\nhttps://esempio.it")).toBe(false);
+    expect(isSafeInternalUrl(null)).toBe(false);
   });
 });

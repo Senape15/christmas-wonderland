@@ -11,14 +11,20 @@ Fonte unica di verità:
 - `supabase/migrations/006_memories_and_collections.sql` – ricordi, collezioni e
   album (Fase 6);
 - `supabase/migrations/007_push_notifications.sql` – PWA, Web Push, preferenze e
-  log delle consegne (Fase 7).
+  log delle consegne (Fase 7);
+- `supabase/migrations/008_role_security.sql` – correzioni di sicurezza Fase 8
+  (blocco auto-promozione admin e scope della simulazione).
 
-> **Stato:** 001, 002, 003, 004 e **005 sono applicate** sul progetto Supabase
-> remoto. La **006 NON è ancora applicata**. Anche la **007 NON è applicata**:
-> entrambe richiedono esecuzione manuale nel SQL Editor e autorizzazione
-> esplicita. Le sezioni marcate «Fase 6»/«Fase 7» descrivono lo stato atteso dopo
-> l'esecuzione; l'app rileva automaticamente la presenza delle migrazioni e
-> degrada senza errori.
+> **Stato (verifica in sola lettura del 2026-11-19):** le migrazioni **001–007
+> risultano strutturalmente applicate** sul progetto remoto: tutte le tabelle e
+> le colonne chiave sono presenti (`memory_entries`, `diary_events`,
+> `memory_spheres.discovered_at`, `final_gift_boxes.physical_gift_id`,
+> `notification_preferences`, `notification_deliveries`,
+> `notification_subscriptions.is_active`, `scheduled_notifications.kind`,
+> funzione `public.is_admin()`). La verifica via PostgREST non copre indici e
+> policy SQL: confermarle nello SQL Editor. La **008 è scritta ma NON applicata**
+> e richiede autorizzazione esplicita. Nessuna migrazione è stata applicata in
+> questa sessione.
 
 Convenzioni: chiavi primarie UUID (`gen_random_uuid()`), `created_at` /
 `updated_at` in `timestamptz` (UTC, visualizzati in `Europe/Rome`), RLS abilitato

@@ -41,6 +41,9 @@ describe("Service Worker", () => {
     expect(sw).toContain("STATIC_CACHE");
     expect(sw).toContain('url.pathname.startsWith("/_next/static/")');
     expect(sw).not.toContain("supabase.co");
+    // Nessun pattern generico per estensione: una futura immagine privata
+    // servita da /api o da una route utente non deve finire in cache.
+    expect(sw).not.toMatch(/\\\.\(\?:css\|js\|woff/);
   });
 
   it("riceve le push e apre l'app dalla notifica", () => {
@@ -48,6 +51,12 @@ describe("Service Worker", () => {
     expect(sw).toContain("showNotification");
     expect(sw).toContain('addEventListener("notificationclick"');
     expect(sw).toContain("clients.openWindow");
+  });
+
+  it("apre solo percorsi interni quando si clicca una notifica", () => {
+    expect(sw).toContain("function safeNotificationUrl");
+    expect(sw).toContain("safeNotificationUrl(payload.url)");
+    expect(sw).toContain("safeNotificationUrl(rawTarget)");
   });
 
   it("in sviluppo non usa la cache statica", () => {
@@ -89,5 +98,10 @@ describe("logout e privacy del dispositivo", () => {
   it("il logout non si blocca se le notifiche falliscono", () => {
     expect(logout).toContain("catch");
     expect(logout).toContain("finally");
+  });
+
+  it("svuota la cache del browser prima di chiudere la sessione", () => {
+    expect(logout).toMatch(/caches\s*\.keys\(\)/);
+    expect(logout).toContain("caches.delete(key)");
   });
 });

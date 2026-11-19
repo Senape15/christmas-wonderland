@@ -3,6 +3,8 @@ import { getFinaleData } from "@/lib/services/memories";
 import { MemoryShell } from "@/components/memories/MemoryShell";
 import { FinaleView } from "@/components/memories/FinaleView";
 
+export const instant = false;
+
 export default async function FinalePage() {
   const user = await requireUser();
   const data = await getFinaleData(user);

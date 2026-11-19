@@ -1,17 +1,85 @@
 # PROJECT_STATUS
 
 **Progetto:** Christmas Wonderland
-**Fase corrente:** FASE 7 – PWA, notifiche Web Push e installazione
+**Fase corrente:** FASE 8 – Collaudo finale, sicurezza, ottimizzazione e rilascio
 **Data ultimo aggiornamento:** 2026-11-19
-**Stato:** FASE 7 IMPLEMENTATA NEL CODICE. Le migrazioni **001–005 sono
-applicate** sul progetto Supabase remoto. Le migrazioni **006 e 007 sono state
-create ma NON applicate**: richiedono esecuzione manuale nel SQL Editor e
-autorizzazione esplicita. La verifica end-to-end in browser con sessione
-utente/admin e il delivery reale delle notifiche **non sono stati eseguiti**
-(mancano credenziali, chiavi VAPID e scheduler).
+**Stato:** FASE 8 COMPLETATA NEL CODICE E COLLAUDA IN LOCALE. Le migrazioni
+**001–007 risultano strutturalmente applicate** sul progetto remoto (verifica
+in sola lettura di tabelle e colonne chiave). La migrazione **008 è scritta ma
+NON applicata**. Nessuna migrazione, deploy o notifica reale è stata eseguita
+in questa sessione.
 
-> Il precedente stato che indicava la 005 come «da applicare» era obsoleto:
-> la 005 è applicata e verificata in sola lettura.
+> Il precedente stato che indicava 006 e 007 come «non applicate» era obsoleto:
+> entrambe risultano presenti nella verifica in sola lettura del 2026-11-19.
+> La verifica non copre indici/policy SQL: confermarle nello SQL Editor.
+
+---
+
+## FASE 8 – Collaudo finale e preparazione al rilascio
+
+### Stato generale
+
+- **VERIFICATO:** audit strutturale (codice, dipendenze, RLS, Server Actions, API,
+  PWA/push) e verifica HTTP in sola lettura; typecheck, lint, 290 test e build.
+- **VERIFICATO:** `/dashboard` e le sezioni admin con sessione reale in Chrome
+  headless; redirect delle route protette senza sessione; manifest, icone, SW,
+  pagina offline; 405/503 dell'endpoint cron senza segreto valido.
+- **IMPLEMENTATO:** correzioni di sicurezza e accessibilità elencate sotto.
+- **DA CONFIGURARE:** VAPID, scheduler, URL Supabase di produzione, backup.
+- **DA TESTARE SU DISPOSITIVO:** installazione PWA e notifiche push reali.
+- **BLOCCATO:** delivery reale, migrazione 008, deploy: richiedono autorizzazione.
+
+### Problemi trovati e corretti
+
+| Problema | Correzione |
+| --- | --- |
+| Auto-promozione ad admin via `PATCH /rest/v1/users` (policy 001) | Migrazione 008 (trigger, **non applicata**) + verifica SQL corretta |
+| Policy simulazione admin non limitata al proprietario | Migrazione 008 |
+| Indizi/oggetti della scatola finale inviati prima del gate | `src/lib/experience/final-box.ts` + test |
+| Segreto cron confrontato con controllo di lunghezza non costante e spaziature | `src/lib/push/auth.ts` (digest SHA-256, trim) + test |
+| URL esterno nelle notifiche → navigazione esterna dal SW | Validazione admin + `safeNotificationUrl` nel SW + test |
+| Cache SW troppo ampia (qualsiasi `.png`/`.js`) | Solo prefissi noti + test |
+| Logout non svuotava la cache e la route API non disattivava le subscription | `logout-button.tsx` + `api/auth/logout` + test |
+| Notifiche programmate potevano anticipare un giorno non sbloccato | `isNotificationDue` + test |
+| Promemoria con orario tardo e finestra oraria non circolare | `rules.ts` + test; preferenza validata |
+| Invio parziale segnato `sent` impediva il retry ai dispositivi falliti | `resolveScheduledDeliveryStatus` + chiave dedupe stabile nei retry automatici + test |
+| Data simulazione validata solo con regex (`2026-02-30`) | `isSimulationDateValid()` nella Server Action |
+| Form login/registrazione senza etichette collegate e focus ring deboli | `htmlFor`/`id` + ring + test sorgente |
+
+### Problemi ancora aperti
+
+- **BLOCCATO:** auto-promozione admin resta possibile finché la 008 non viene
+  applicata; richiede autorizzazione esplicita e backup.
+- **BLOCCATO:** tentativi password della scatola finale senza limite (serve
+  tabella/migrazione dedicata e decisione sul numero massimo).
+- **DA CONFIGURARE:** VAPID, `PUSH_SCHEDULER_SECRET`, cron esterno, URL/redirect
+  di produzione, backup verificato.
+- **DA TESTARE SU DISPOSITIVO:** installazione PWA, permessi push, consegna su
+  Windows/Android/iOS, responsive fisico, iOS 16.4+.
+- **RISCHIO RESIDUO:** `village_hotspots.day_number` leggibile via PostgREST
+  dagli utenti autenticati (mappa giorno↔luogo); richiede un cambio di modello.
+- **RISCHIO RESIDUO:** race di concorrenza tra due invii cron simultanei (doppio
+  tentativo sullo stesso dispositivo); mitigata dal dedupe key, non eliminata.
+- **LIMITE DATI:** il progetto remoto contiene 1 utente, 24 giorni e 24 hotspot,
+  ma nessun regalo/quiz/password/configurazione: molte interazioni non sono
+  esercitabili con dati reali.
+
+### Test eseguiti
+
+| Verifica | Esito |
+| --- | --- |
+| `npm run typecheck` | ✅ 0 errori |
+| `npm run lint` | ✅ 0 errori/warning |
+| `npm test` | ✅ **290/290** test (39 file) |
+| `npm run build` | ✅ 38 route |
+| HTTP in sola lettura | manifest 200, SW 200, offline 200, icone 200, cron GET 405/POST 503, route protette 307 |
+| Browser headless con sessione | dashboard + pagine admin renderizzate, nessuna eccezione console, SW attivo, 375px senza overflow |
+| Migrazioni 001–007 | ✅ struttura presente (tabelle/colonne chiave); policy/indici da confermare in SQL Editor |
+
+### Documentazione creata
+
+- `docs/RELEASE.md` – guida Vercel/Supabase, env, HTTPS, backup, aggiornamento, rollback.
+- `docs/PWA_INSTALL.md` – installazione Windows/Android/iOS e limiti delle PWA.
 
 ---
 
@@ -390,4 +458,4 @@ schema iniziale e prime route pubbliche/protette.
 
 ## Prossime fasi
 
-**Nessuna.** La Fase 7 è l'ultima prevista. Non avviare la Fase 8.
+**Nessuna.** La Fase 8 è l'ultima prevista. Non avviare la Fase 9.

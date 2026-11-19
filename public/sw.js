@@ -31,14 +31,22 @@ function isPrivatePath(pathname) {
   return PRIVATE_PREFIXES.some((prefix) => pathname.startsWith(prefix));
 }
 
+/** Solo directory pubbliche note: mai cache di contenuti futuri o utente. */
 function isStaticAsset(url) {
   return (
     url.pathname.startsWith("/_next/static/") ||
     url.pathname.startsWith("/icons/") ||
     url.pathname.startsWith("/fonts/") ||
     url.pathname === "/manifest.webmanifest" ||
-    /\.(?:css|js|woff2?|png|jpg|jpeg|webp|gif|svg|ico)$/.test(url.pathname)
+    url.pathname === "/offline.html"
   );
+}
+
+/** Navigazioni delle notifiche: solo percorsi interni, mai URL esterni. */
+function safeNotificationUrl(value) {
+  return typeof value === "string" && /^\/(?!\/)[^\s\\]*$/.test(value)
+    ? value
+    : "/dashboard";
 }
 
 self.addEventListener("install", (event) => {
@@ -150,7 +158,7 @@ self.addEventListener("push", (event) => {
     renotify: false,
     requireInteraction: false,
     data: {
-      url: payload.url || "/dashboard",
+      url: safeNotificationUrl(payload.url),
       kind: payload.kind || "special",
     },
   };
@@ -160,10 +168,10 @@ self.addEventListener("push", (event) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const target = new URL(
-    (event.notification.data && event.notification.data.url) || "/dashboard",
-    self.location.origin
-  ).href;
+  const rawTarget =
+    (event.notification.data && event.notification.data.url) || "/dashboard";
+  const target = new URL(safeNotificationUrl(rawTarget), self.location.origin)
+    .href;
 
   event.waitUntil(
     (async () => {

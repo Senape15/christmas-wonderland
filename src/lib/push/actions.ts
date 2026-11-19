@@ -6,6 +6,7 @@ import { z } from "zod";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { detectPushCapabilities } from "@/lib/services/capabilities";
+import { isPreferredTimeSendable } from "@/lib/push/rules";
 import { APP_TIMEZONE } from "@/lib/utils";
 import type { PushResult } from "@/types/notifications";
 
@@ -77,6 +78,25 @@ export async function saveNotificationPreferences(
     }
 
     const values = parsed.data;
+    if (!isPreferredTimeSendable({
+      enabled: values.enabled,
+      dailyReminders: values.dailyReminders,
+      reminder: values.reminder,
+      clues: values.clues,
+      quizzes: values.quizzes,
+      special: values.special,
+      finale: values.finale,
+      preferredTime: values.preferredTime,
+      quietHoursStart: values.quietHoursStart,
+      quietHoursEnd: values.quietHoursEnd,
+      timezone: APP_TIMEZONE,
+    })) {
+      return {
+        ok: false,
+        error: "L'orario preferito non può cadere nelle ore di silenzio.",
+      };
+    }
+
     const supabase = await createClient();
     const { error } = await supabase.from("notification_preferences").upsert(
       {

@@ -1,4 +1,4 @@
-import { timingSafeEqual } from "node:crypto";
+import { createHash, timingSafeEqual } from "node:crypto";
 
 /**
  * Protezione dell'endpoint di scheduler.
@@ -14,17 +14,19 @@ export type CronAuthResult =
   | { ok: false; status: 401 | 503; error: string };
 
 function safeEqual(a: string, b: string): boolean {
-  const bufferA = Buffer.from(a);
-  const bufferB = Buffer.from(b);
-  if (bufferA.length !== bufferB.length) return false;
-  return timingSafeEqual(bufferA, bufferB);
+  // Confronta digests a lunghezza fissa: la lunghezza del segreto non deve
+  // essere deducibile dal tempo di risposta.
+  const digestA = createHash("sha256").update(a).digest();
+  const digestB = createHash("sha256").update(b).digest();
+  return timingSafeEqual(digestA, digestB);
 }
 
 export function authorizeCronRequest(
   headers: Headers,
   secret: string | undefined
 ): CronAuthResult {
-  if (!secret || secret.trim().length < 16) {
+  const configured = secret?.trim();
+  if (!configured || configured.length < 16) {
     return {
       ok: false,
       status: 503,
@@ -40,7 +42,7 @@ export function authorizeCronRequest(
   const direct = (headers.get(CRON_SECRET_HEADER) ?? "").trim();
   const provided = bearer || direct;
 
-  if (!provided || !safeEqual(provided, secret)) {
+  if (!provided || !safeEqual(provided, configured)) {
     return { ok: false, status: 401, error: "Non autorizzato." };
   }
 

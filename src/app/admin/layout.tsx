@@ -2,6 +2,14 @@ import { Suspense } from "react";
 import { requireAdmin } from "@/lib/auth";
 import { AdminShell } from "@/components/admin/AdminShell";
 
+/**
+ * Il pannello admin aggrega molte query (statistiche, panoramica giorni,
+ * contenuti) in ogni pagina: non può produrre un guscio statico istantaneo.
+ * `instant = false` dichiara che la navigazione può bloccare, evitando
+ * l'errore Next 16 "encountered uncached data during prerendering".
+ */
+export const instant = false;
+
 async function AdminGate({ children }: { children: React.ReactNode }) {
   const user = await requireAdmin();
   return <AdminShell email={user.email}>{children}</AdminShell>;

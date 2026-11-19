@@ -126,9 +126,9 @@ indicato. Poi fai logout/login e prova l'apertura di un giorno sbloccato.
 
 ### 2.4 Fase 6 – Ricordi, collezioni e album (migrazione 006)
 
-> **Stato attuale: la migrazione 006 NON è stata applicata** ed è una manuale
-> operazione che richiede autorizzazione esplicita. L'app è progettata per
-> funzionare anche senza di essa (mostra i dati delle fasi precedenti).
+> **Stato attuale (2026-11-19): la migrazione 006 risulta applicata** sul
+> progetto remoto (verifica in sola lettura di tabelle e colonne chiave).
+> Queste istruzioni restano valide per un nuovo ambiente.
 
 In **SQL Editor**, dopo la 005, incolla ed esegui
 `supabase/migrations/006_memories_and_collections.sql`. È additiva e idempotente:
@@ -174,10 +174,11 @@ necessaria» scompare e i ricordi vengono salvati.
 
 ### 2.5 Fase 7 – PWA e Web Push (migrazione 007)
 
-> **Stato attuale: la migrazione 007 NON è stata applicata.** È un'operazione
-> manuale che richiede autorizzazione esplicita. L'app implementa la PWA anche
-> senza di essa; preferenze e dispositivi richiedono la migrazione per essere
-> salvati.
+> **Stato attuale (2026-11-19): la migrazione 007 risulta applicata** sul
+> progetto remoto (verifica in sola lettura di tabelle e colonne chiave).
+> L'app implementa la PWA anche senza di essa; preferenze e dispositivi
+> richiedono la migrazione per essere salvati. Restano da configurare le
+> chiavi VAPID e lo scheduler.
 
 In **SQL Editor**, dopo la 006, incolla ed esegui
 `supabase/migrations/007_push_notifications.sql`. È additiva e idempotente:
@@ -209,6 +210,38 @@ select polname
  where tablename = 'notification_subscriptions'
    and polname like '%their own%';
 ```
+
+### 2.6 Fase 8 – Sicurezza dei ruoli (migrazione 008)
+
+> **Stato attuale: la migrazione 008 è scritta ma NON applicata.** Richiede
+> backup e autorizzazione esplicita. Nessuna migrazione è stata applicata in
+> questa sessione.
+
+In SQL Editor, eseguire `supabase/migrations/008_role_security.sql` dopo la 007:
+
+- crea un trigger che impedisce a una sessione `authenticated` di cambiare
+  `public.users.role` (l'aggiornamento dal server con service_role e dallo SQL
+  Editor resta possibile, così come `setUserRole`);
+- vincola la policy della simulazione admin al proprio `admin_id`, così un
+  admin non può leggere/modificare la simulazione di un altro tramite API.
+
+Verifica:
+
+```sql
+select tgname from pg_trigger
+ where tgrelid = 'public.users'::regclass
+   and tgname = 'trg_prevent_role_self_change';
+-- expected: 1 riga
+
+select policyname from pg_policies
+ where tablename = 'admin_date_simulations'
+   and policyname = 'Admins can manage own simulation';
+-- expected: 1 riga
+```
+
+Il test `supabase/seed/rls_verification.sql §6` verifica che un utente normale
+non possa auto-promuoversi: senza la 008 l'aggiornamento riesce e il test
+fallisce.
 
 ## 3. Row Level Security (RLS)
 

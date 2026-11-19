@@ -3,6 +3,8 @@ import { getGalleryData } from "@/lib/services/memories";
 import { MemoryShell } from "@/components/memories/MemoryShell";
 import { GalleryView } from "@/components/memories/GalleryView";
 
+export const instant = false;
+
 export default async function GalleryPage() {
   const user = await requireUser();
   const data = await getGalleryData(user);

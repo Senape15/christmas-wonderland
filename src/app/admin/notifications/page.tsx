@@ -2,6 +2,8 @@ import { Suspense } from "react";
 import { AdminResourcePage } from "@/components/admin/AdminResourcePage";
 import { NotificationOps } from "@/components/admin/NotificationOps";
 
+export const instant = false;
+
 export default function AdminNotificationsPage() {
   return (
     <div className="space-y-10">

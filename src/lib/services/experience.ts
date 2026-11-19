@@ -25,6 +25,10 @@ import {
   publicSuccessMessage,
 } from "@/lib/experience/password";
 import {
+  gateFinalBoxDetails,
+  gateFinalBoxMessage,
+} from "@/lib/experience/final-box";
+import {
   findCorrectAnswerText,
   toPublicQuiz,
   type QuizAnswerRow,
@@ -792,10 +796,11 @@ export async function loadDayExperience(
       decorations: toStringArray(box.decorations),
       symbol: box.symbol ? String(box.symbol) : null,
       introMessage: String(box.intro_message ?? ""),
-      clues: toStringArray(box.clues),
-      objects: toStringArray(box.objects),
-      // Il messaggio finale è la rivelazione: non deve uscire prima del gate.
-      finalMessage: completed ? String(box.final_message ?? "") : "",
+      // Indizi, oggetti e messaggio finale sono la rivelazione: non devono
+      // uscire dal server prima del gate della password.
+      clues: gateFinalBoxDetails(box.clues, completed),
+      objects: gateFinalBoxDetails(box.objects, completed),
+      finalMessage: gateFinalBoxMessage(box.final_message, completed),
       passwordEnabled: Boolean(box.password_enabled),
       passwordHint: String(box.password_hint ?? ""),
       openingSequence: toStringArray(box.opening_sequence),

@@ -3,6 +3,8 @@ import { getStatisticsData } from "@/lib/services/memories";
 import { MemoryShell } from "@/components/memories/MemoryShell";
 import { StatisticsView } from "@/components/memories/StatisticsView";
 
+export const instant = false;
+
 export default async function StatisticsPage() {
   const user = await requireUser();
   const data = await getStatisticsData(user);

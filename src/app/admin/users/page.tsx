@@ -3,6 +3,8 @@ import { getUsersWithProgress } from "@/lib/services/admin";
 import { UsersManager } from "@/components/admin/UsersManager";
 import { SectionHeader } from "@/components/admin/ui";
 
+export const instant = false;
+
 export default async function AdminUsersPage() {
   const user = await requireAdmin();
   const rows = await getUsersWithProgress();

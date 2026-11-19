@@ -61,4 +61,26 @@ describe("authorizeCronRequest", () => {
     );
     expect(result.ok).toBe(false);
   });
+
+  it("accetta il segreto con spaziature nella configurazione", () => {
+    const result = authorizeCronRequest(
+      headers({ authorization: `Bearer ${SECRET}` }),
+      `  ${SECRET}  `
+    );
+    expect(result).toEqual({ ok: true });
+  });
+
+  it("rifiuta segreti di lunghezza diversa senza confrontare il testo in chiaro", () => {
+    // Copre il ramo che in precedenza usava un controllo di lunghezza non
+    // costante: il confronto ora avviene su digest SHA-256 a lunghezza fissa.
+    const result = authorizeCronRequest(
+      headers({ authorization: "Bearer short" }),
+      SECRET
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.status).toBe(401);
+    expect(
+      authorizeCronRequest(headers({ [CRON_SECRET_HEADER]: SECRET }), SECRET)
+    ).toEqual({ ok: true });
+  });
 });

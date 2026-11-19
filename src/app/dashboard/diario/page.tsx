@@ -3,6 +3,8 @@ import { getDiaryData } from "@/lib/services/memories";
 import { MemoryShell } from "@/components/memories/MemoryShell";
 import { DiaryView } from "@/components/memories/DiaryView";
 
+export const instant = false;
+
 export default async function DiaryPage() {
   const user = await requireUser();
   const data = await getDiaryData(user);

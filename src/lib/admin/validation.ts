@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isSafeInternalUrl } from "@/lib/push/rules";
 import type { FieldDef, ResourceDef } from "./resources";
 
 /**
@@ -54,6 +55,14 @@ function schemaForField(field: FieldDef): z.ZodTypeAny {
 
   if (field.uuid) {
     schema = z.string().uuid();
+  }
+
+  // Il campo `url` delle notifiche programmate finisce nel payload push e
+  // viene usato dal Service Worker per la navigazione: solo percorsi interni.
+  if (field.name === "url") {
+    schema = z.string().refine(isSafeInternalUrl, {
+      message: "Usa un percorso interno che inizi con / (es. /dashboard).",
+    });
   }
 
   return field.required ? schema : schema.optional().nullable();

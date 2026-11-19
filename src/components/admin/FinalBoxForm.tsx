@@ -84,7 +84,7 @@ export function FinalBoxForm({
     });
   }
 
-  const input = "w-full rounded-lg border border-cream-300/20 bg-pine-950 px-3 py-2 text-sm outline-none focus:border-gold/60";
+  const input = "w-full rounded-lg border border-cream-300/20 bg-pine-950 px-3 py-2 text-sm outline-none focus:border-gold/60 focus-visible:ring-2 focus-visible:ring-gold/60";
 
   return (
     <form onSubmit={save} className="grid gap-5 lg:grid-cols-2">

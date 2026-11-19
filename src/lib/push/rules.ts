@@ -163,7 +163,15 @@ export function isWithinSendWindow(
   }
 
   const preferred = parseTimeOfDay(preferences.preferredTime) ?? 8 * 60;
-  return local.minutesOfDay >= preferred;
+  const sincePreferred = (local.minutesOfDay - preferred + 24 * 60) % (24 * 60);
+  const quietStart = parseTimeOfDay(preferences.quietHoursStart);
+  if (quietStart !== null) {
+    const quietSincePreferred = (quietStart - preferred + 24 * 60) % (24 * 60);
+    if (quietSincePreferred > 0 && sincePreferred >= quietSincePreferred) {
+      return false;
+    }
+  }
+  return true;
 }
 
 /**
@@ -179,7 +187,22 @@ export function isReminderDue(
 
   const local = toLocalParts(now, preferences.timezone || APP_TIMEZONE);
   const preferred = parseTimeOfDay(preferences.preferredTime) ?? 8 * 60;
-  return local.minutesOfDay >= preferred + REMINDER_DELAY_MINUTES;
+  // Un orario preferito tardo non deve impedire per sempre il promemoria:
+  // le 24 ore sono circolari (es. 22:00 + 4h = 02:00 del giorno dopo).
+  const elapsed = (local.minutesOfDay - preferred + 24 * 60) % (24 * 60);
+  return elapsed >= REMINDER_DELAY_MINUTES;
+}
+
+/** L'orario preferito deve cadere fuori dalle ore di silenzio. */
+export function isPreferredTimeSendable(
+  preferences: NotificationPreferences
+): boolean {
+  const preferred = parseTimeOfDay(preferences.preferredTime) ?? 8 * 60;
+  return !isQuietHour(
+    preferred,
+    preferences.quietHoursStart,
+    preferences.quietHoursEnd
+  );
 }
 
 export function dailyDedupeKey(dateString: string, subscriptionId: string): string {
@@ -196,6 +219,21 @@ export function scheduledDedupeKey(
   subscriptionId: string
 ): string {
   return `scheduled:${notificationId}:${attempt}:${subscriptionId}`;
+}
+
+/**
+ * I retry automatici devono riutilizzare la stessa chiave: se una notifica
+ * parzialmente riuscita torna `pending`, i dispositivi già raggiunti restano
+ * `sent` con la stessa chiave e non ricevono duplicati. Il "Reinvia" esplicito
+ * dell'admin usa invece un tentativo diverso.
+ */
+export function scheduledJobDedupeKey(
+  notificationId: string,
+  subscriptionId: string,
+  resend: boolean,
+  attempt: number
+): string {
+  return scheduledDedupeKey(notificationId, resend ? attempt : 0, subscriptionId);
 }
 
 export function testDedupeKey(now: Date, subscriptionId: string): string {
@@ -227,16 +265,65 @@ export function isNotificationDue(
   if (row.status === "sent" || row.status === "skipped") return false;
   if (row.attempts >= MAX_DELIVERY_ATTEMPTS) return false;
 
+  // Il vincolo sul giorno vale anche quando è presente una data programmata:
+  // un amministratore non deve poter anticipare un contenuto futuro solo
+  // impostando `scheduled_for` nel passato.
+  if (row.dayNumber !== null) {
+    const unlock = unlockedDays.get(row.dayNumber);
+    if (!unlock || unlock.getTime() > now.getTime()) return false;
+  }
+
   if (row.scheduledFor) {
     const scheduled = new Date(row.scheduledFor);
     if (Number.isNaN(scheduled.getTime())) return false;
     return scheduled.getTime() <= now.getTime();
   }
 
-  if (row.dayNumber === null) return false;
-  const unlock = unlockedDays.get(row.dayNumber);
-  if (!unlock) return false;
-  return unlock.getTime() <= now.getTime();
+  return row.dayNumber !== null;
+}
+
+/**
+ * Stato di una notifica programmata dopo un ciclo di invio.
+ *
+ * Se almeno un dispositivo è fallito, la notifica resta ritentabile anche
+ * quando altri dispositivi hanno ricevuto il messaggio: il dedupe_key evita
+ * di inviare due volte a chi ha già ricevuto.
+ */
+export function resolveScheduledDeliveryStatus(input: {
+  sent: number;
+  failed: number;
+  eligible: number;
+  attempt: number;
+}): {
+  status: "sent" | "failed" | "skipped" | "pending";
+  attempts: number;
+  lastError: string | null;
+} {
+  if (input.failed > 0) {
+    return {
+      status: "failed",
+      attempts: Math.min(input.attempt + 1, MAX_DELIVERY_ATTEMPTS),
+      lastError:
+        input.sent > 0
+          ? `${input.failed} dispositivi non raggiunti: nuovo tentativo programmato.`
+          : "Nessun dispositivo raggiunto: nuovo tentativo programmato.",
+    };
+  }
+  if (input.sent > 0) {
+    return { status: "sent", attempts: input.attempt, lastError: null };
+  }
+  if (input.eligible === 0) {
+    return {
+      status: "skipped",
+      attempts: input.attempt,
+      lastError: "Nessun destinatario idoneo (pubblico, preferenze o dispositivi).",
+    };
+  }
+  return {
+    status: "pending",
+    attempts: input.attempt,
+    lastError: "Retry programmato: nessun invio in questo ciclo.",
+  };
 }
 
 export interface AudienceInput {
@@ -267,6 +354,15 @@ export function audienceMatches(row: AudienceInput): boolean {
 /** Solo gli amministratori possono inviare notifiche ad altri utenti. */
 export function canManageNotifications(role: string | null | undefined): boolean {
   return role === "admin";
+}
+
+/**
+ * URL delle notifiche: solo percorsi interni. Un URL assoluto o una stringa
+ * tipo `//evil.example` verrebbe usata dal Service Worker per navigare a un
+ * sito esterno quando l'utente clicca la notifica.
+ */
+export function isSafeInternalUrl(value: unknown): value is string {
+  return typeof value === "string" && /^\/(?!\/)[^\s\\]*$/.test(value);
 }
 
 /**

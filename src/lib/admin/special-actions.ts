@@ -5,6 +5,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { hashPassword } from "@/lib/admin/passwords";
+import { isSimulationDateValid } from "@/lib/admin/simulation";
 import { detectPhase6Capabilities } from "@/lib/services/capabilities";
 import type { ActionResult } from "./actions";
 
@@ -190,6 +191,11 @@ export async function saveSimulation(values: unknown): Promise<ActionResult> {
     const parsed = simulationSchema.safeParse(values);
     if (!parsed.success) {
       return { ok: false, error: parsed.error.issues[0]?.message ?? "Dati non validi." }
+    }
+    if (parsed.data.active) {
+      if (!parsed.data.date || !isSimulationDateValid(parsed.data.date)) {
+        return { ok: false, error: "Data di simulazione non valida." };
+      }
     }
 
     const supabase = await createAdminClient();

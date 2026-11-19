@@ -23,6 +23,14 @@ export function LogoutButton() {
     } catch {
       // Il logout non deve mai bloccarsi per un problema di notifiche.
     } finally {
+      // Le cache contengono solo asset pubblici, ma su un dispositivo
+      // condiviso vengono svuotate: nessun contenuto resta offline.
+      if (typeof window !== "undefined" && "caches" in window) {
+        await caches
+          .keys()
+          .then((keys) => Promise.all(keys.map((key) => caches.delete(key))))
+          .catch(() => null);
+      }
       await signOut();
       router.push("/login");
       router.refresh();

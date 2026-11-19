@@ -5,6 +5,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { FinalBoxForm } from "@/components/admin/FinalBoxForm";
 import { SectionHeader } from "@/components/admin/ui";
 
+export const instant = false;
+
 export default async function AdminFinalBoxPage() {
   await requireAdmin();
   const [box, capabilities] = await Promise.all([

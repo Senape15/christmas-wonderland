@@ -180,7 +180,7 @@ export function CrudManager({
   function renderField(field: FieldDef) {
     const value = values[field.name];
     const common =
-      "w-full rounded-lg border border-cream-300/20 bg-pine-950/60 px-3 py-2 text-sm text-cream-50 outline-none focus:border-gold/60";
+      "w-full rounded-lg border border-cream-300/20 bg-pine-950/60 px-3 py-2 text-sm text-cream-50 outline-none focus:border-gold/60 focus-visible:ring-2 focus-visible:ring-gold/60";
 
     if (field.readonly) return null;
 
@@ -266,7 +266,7 @@ export function CrudManager({
           onChange={(event) => setSearch(event.target.value)}
           placeholder="Cerca…"
           aria-label="Cerca nella tabella"
-          className="w-full max-w-xs rounded-lg border border-cream-300/20 bg-pine-900/70 px-3 py-2 text-sm outline-none focus:border-gold/60"
+          className="w-full max-w-xs rounded-lg border border-cream-300/20 bg-pine-900/70 px-3 py-2 text-sm outline-none focus:border-gold/60 focus-visible:ring-2 focus-visible:ring-gold/60"
         />
         <button
           type="button"

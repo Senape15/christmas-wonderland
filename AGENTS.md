@@ -32,6 +32,7 @@ There is no CI, pre-commit hook, formatter, or codegen config. `PROJECT_STATUS.m
 - `cacheComponents` and `partialPrefetching` are enabled in `next.config.ts`. Request-time values (`Date.now()`, cookies, Supabase sessions) must be deferred with `await connection()`. `getCurrentUser()` already does this to avoid the `unstable value Date.now() while prerendering` build failure — do not remove it.
 - Middleware is `src/proxy.ts` exporting `proxy` (Next 16 renamed it). Do not create `middleware.ts`.
 - `cookies()` and `headers()` are async.
+- Con `partialPrefetching`, ogni pagina che legge la sessione (quindi tutte le pagine `dashboard/*` e `admin/*`) blocca la navigazione. Le pagine che non hanno un guscio statico dichiarano `export const instant = false`; `instant` vale per il singolo segmento, quindi va ripetuto nelle nuove pagine, non basta il layout. `/dashboard` resta l'eccezione "instant": i dati stanno dietro `<Suspense>`.
 - The bundled Next docs are the authority for APIs: `node_modules/next/dist/docs/`.
 
 ## Architecture
@@ -47,7 +48,7 @@ There is no CI, pre-commit hook, formatter, or codegen config. `PROJECT_STATUS.m
 
 ## Database and security invariants
 
-- `supabase/migrations/001_initial_schema.sql` is the schema source of truth (16 tables, RLS on every table). `002_village_map.sql` adds the village (additive/idempotent: `village_hotspots`, `village_hotspot_messages`, `physical_contents`, plus `sort_order`/`is_active` on `village_locations`); `003` fixes the admin role policy; `004_admin_panel.sql` adds the admin panel, password tables/config, final box, notifications, simulations and Storage; `005_experience_and_security.sql` tightens progress writes, adds `final_box_completions`, dedupes quiz successes and normalizes unlock dates to Rome midnight. `006_memories_and_collections.sql` (Phase 6: additive collectible metadata, `memory_entries`, `diary_events`, sphere timestamps, final-gift link) and `007_push_notifications.sql` (Phase 7: subscription metadata, `notification_preferences`, `notification_deliveries`, scheduled-notification fields) are **written but not applied remotely**. `src/types/database.ts` is a hand-maintained subset, not generated — update it whenever tables or columns change.
+- `supabase/migrations/001_initial_schema.sql` is the schema source of truth (16 tables, RLS on every table). `002_village_map.sql` adds the village (additive/idempotent: `village_hotspots`, `village_hotspot_messages`, `physical_contents`, plus `sort_order`/`is_active` on `village_locations`); `003` fixes the admin role policy; `004_admin_panel.sql` adds the admin panel, password tables/config, final box, notifications, simulations and Storage; `005_experience_and_security.sql` tightens progress writes, adds `final_box_completions`, dedupes quiz successes and normalizes unlock dates to Rome midnight. `006_memories_and_collections.sql` (Phase 6: additive collectible metadata, `memory_entries`, `diary_events`, sphere timestamps, final-gift link) and `007_push_notifications.sql` (Phase 7: subscription metadata, `notification_preferences`, `notification_deliveries`, scheduled-notification fields) result structurally applied remotely (read-only check 2026-11-19). `008_role_security.sql` (Phase 8: prevents role self-promotion, scopes admin simulations to their owner) is **written but not applied remotely**. `src/types/database.ts` is a hand-maintained subset, not generated — update it whenever tables or columns change.
 - Roles live in the app-level `public.users` table (mirror of `auth.users`), not in JWT metadata. Do not reintroduce the silent `?? "user"` fallback in `getCurrentUser()`: database/RLS errors must surface (migration 003 fixes the recursive admin policy with a `SECURITY DEFINER` `public.is_admin()` function).
 - Unlock visibility is enforced by RLS (`unlock_date <= now()`) plus server-side checks in `src/lib/services/advent.ts`. Never gate future gifts in client code, and never send future gift data to the client. `village_hotspot_messages` and `physical_contents` use the same unlock join; locked hotspots expose no teaser or Nico message. Do not add place→day constants to code.
 - `SUPABASE_SERVICE_ROLE_KEY` bypasses RLS; only use `createAdminClient()` inside server-only code (admin Server Actions and the Phase 5 services that read hashes, correct answers or future rows during admin simulation), never in client components and never in payloads returned to the client.
@@ -100,7 +101,8 @@ quiet hours and `Europe/Rome`.
 
 ## Scope
 
-`PROJECT_STATUS.md` defines seven phases. Phases 1–7 are complete in code;
-migrations 001–005 are applied remotely, while **006 and 007 must be run
-manually** in the Supabase SQL Editor and are not applied to the remote
-project. Do not start Phase 8.
+`PROJECT_STATUS.md` defines eight phases. Phases 1–8 are complete in code;
+migrations 001–007 result structurally applied remotely (read-only check,
+2026-11-19). **`008_role_security.sql` is written but NOT applied** and must
+be run manually in the Supabase SQL Editor after explicit authorization.
+Do not start Phase 9.

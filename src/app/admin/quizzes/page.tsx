@@ -1,5 +1,7 @@
 import { AdminResourcePage } from "@/components/admin/AdminResourcePage";
 
+export const instant = false;
+
 export default function AdminQuizzesPage() {
   return (
     <AdminResourcePage

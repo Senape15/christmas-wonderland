@@ -3,6 +3,8 @@ import { getAlbumData } from "@/lib/services/memories";
 import { MemoryShell } from "@/components/memories/MemoryShell";
 import { AlbumView } from "@/components/memories/AlbumView";
 
+export const instant = false;
+
 export default async function AlbumPage() {
   const user = await requireUser();
   const data = await getAlbumData(user);

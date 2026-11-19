@@ -20,8 +20,9 @@ export function RegisterForm() {
   return (
     <form action={formAction} className="space-y-4">
       <div className="space-y-2">
-        <label className="text-sm font-medium text-white">Nome</label>
+        <label htmlFor="register-name" className="text-sm font-medium text-white">Nome</label>
         <input
+          id="register-name"
           name="name"
           type="text"
           className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
@@ -31,8 +32,9 @@ export function RegisterForm() {
       </div>
 
       <div className="space-y-2">
-        <label className="text-sm font-medium text-white">Email</label>
+        <label htmlFor="register-email" className="text-sm font-medium text-white">Email</label>
         <input
+          id="register-email"
           name="email"
           type="email"
           className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
@@ -42,8 +44,9 @@ export function RegisterForm() {
       </div>
 
       <div className="space-y-2">
-        <label className="text-sm font-medium text-white">Password</label>
+        <label htmlFor="register-password" className="text-sm font-medium text-white">Password</label>
         <input
+          id="register-password"
           name="password"
           type="password"
           className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
@@ -54,8 +57,9 @@ export function RegisterForm() {
       </div>
 
       <div className="space-y-2">
-        <label className="text-sm font-medium text-white">Conferma Password</label>
+        <label htmlFor="register-confirm" className="text-sm font-medium text-white">Conferma Password</label>
         <input
+          id="register-confirm"
           name="confirmPassword"
           type="password"
           className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"

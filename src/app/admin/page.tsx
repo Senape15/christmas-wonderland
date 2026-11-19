@@ -3,6 +3,8 @@ import { requireAdmin } from "@/lib/auth";
 import { getDashboardStats, getDayOverview } from "@/lib/services/admin";
 import { SectionHeader, StatCard } from "@/components/admin/ui";
 
+export const instant = false;
+
 const QUICK_LINKS = [
   { href: "/admin/days", label: "Giorni", hint: "Date, titoli e descrizioni" },
   { href: "/admin/locations", label: "Villaggio", hint: "Zone, hotspot e testi" },
