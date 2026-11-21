@@ -242,9 +242,14 @@ export function NotificationSettings({
                 : supported === null
                   ? "Verifico il supporto del browser…"
                   : currentEndpoint
-                    ? "Questo dispositivo è iscritto e riceverà le notifiche."
+                    ? "Notifiche attive"
                     : "Attiva le notifiche per ricevere gli avvisi delle caselle."}
             </p>
+            {currentEndpoint && (
+              <p className="mt-0.5 text-xs text-cream-200/55">
+                Questo dispositivo è iscritto e riceverà le notifiche.
+              </p>
+            )}
             <p className="mt-2 text-xs text-cream-300/55">
               Permesso:{" "}
               {permission === "granted"
@@ -276,7 +281,7 @@ export function NotificationSettings({
                 disabled={disabled || supported !== true || !vapidPublicKey}
                 className="rounded-full bg-gold px-4 py-2 text-xs font-semibold text-pine-950 hover:bg-gold-light disabled:opacity-50"
               >
-                Attiva su questo dispositivo
+                Attiva notifiche
               </button>
             )}
           </div>
