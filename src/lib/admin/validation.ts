@@ -32,7 +32,11 @@ function schemaForField(field: FieldDef): z.ZodTypeAny {
       break;
     case "date":
     case "datetime":
-      schema = z.union([z.string(), z.null()]);
+      // Le colonne NOT NULL (es. advent_days.unlock_date) non accettano null:
+      // un campo obbligatorio vuoto deve fallire qui, con un messaggio chiaro.
+      schema = field.required
+        ? z.string().min(1, { message: "Campo obbligatorio" })
+        : z.union([z.string(), z.null()]);
       break;
     case "select":
       if (field.name === "day_number") {

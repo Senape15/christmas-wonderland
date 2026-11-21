@@ -7,13 +7,12 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { hashPassword } from "@/lib/admin/passwords";
 import { isSimulationDateValid } from "@/lib/admin/simulation";
 import { detectPhase6Capabilities } from "@/lib/services/capabilities";
+import { reportServerError } from "@/lib/server-error";
 import type { ActionResult } from "./actions";
 
 function fail(error: unknown): ActionResult {
-  return {
-    ok: false,
-    error: error instanceof Error ? error.message : "Errore sconosciuto",
-  };
+  // Gli errori Supabase/PostgREST sono oggetti semplici, non istanze di Error.
+  return { ok: false, error: reportServerError("admin/special-actions", error) };
 }
 
 function parseJsonArray(value: unknown, label: string): unknown[] {

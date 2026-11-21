@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   defaultFormValues,
+  emptyFieldValue,
   getResource,
   type FieldDef,
   type ResourceDef,
@@ -39,12 +40,14 @@ function toInputValue(field: FieldDef, value: unknown): unknown {
 
 function toStoredValue(field: FieldDef, value: unknown): unknown {
   if (value === "" || value === null || value === undefined) {
-    // Le colonne NOT NULL con default database non accettano un NULL esplicito.
-    return field.defaultValue ?? null;
+    // Le colonne NOT NULL non accettano un NULL esplicito: il vuoto assume
+    // il valore dichiarato dal campo ("" per i testi, {} / [] per i JSON).
+    return emptyFieldValue(field);
   }
   if (field.type === "number") return Number(value);
   if (field.type === "json") {
-    if (typeof value !== "string" || value.trim() === "") return field.name.includes("conditions") ? {} : [];
+    if (typeof value !== "string") return value;
+    if (value.trim() === "") return emptyFieldValue(field);
     try {
       return JSON.parse(value);
     } catch {

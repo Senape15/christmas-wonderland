@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { defaultFormValues, getResource } from "./resources";
+import { defaultFormValues, emptyFieldValue, getResource } from "./resources";
 import { pickAllowedValues, validateAdminValues } from "./validation";
 
 describe("validazione admin", () => {
@@ -62,6 +62,38 @@ describe("validazione admin", () => {
     stored.title = "Promemoria";
     stored.body = "Testo";
     expect(validateAdminValues(resource, stored).success).toBe(true);
+  });
+
+  it("rifiuta una data obbligatoria vuota prima dell'INSERT", () => {
+    const resource = getResource("advent_days")!;
+    const base = { day_number: 1, title: "Giorno 1", description: "" };
+
+    expect(validateAdminValues(resource, { ...base, unlock_date: "" }).success).toBe(false);
+    expect(validateAdminValues(resource, { ...base, unlock_date: null }).success).toBe(false);
+    expect(
+      validateAdminValues(resource, { ...base, unlock_date: "2026-12-01T00:00:00Z" }).success
+    ).toBe(true);
+  });
+
+  it("mappa i campi vuoti sui valori accettati dalle colonne NOT NULL", () => {
+    const resource = getResource("physical_contents", { phase6: true })!;
+    const fields = Object.fromEntries(
+      resource.fields.map((field) => [field.name, field])
+    );
+
+    expect(emptyFieldValue(fields.content)).toBe("");
+    expect(emptyFieldValue(fields.admin_notes)).toBe("");
+    expect(emptyFieldValue(fields.activation_conditions)).toEqual({});
+    expect(emptyFieldValue(fields.related_content_ids)).toEqual([]);
+    expect(emptyFieldValue(fields.hotspot_id)).toBeNull();
+
+    // Select opzionali su colonne NOT NULL con default: il vuoto usa il default.
+    const gift = getResource("physical_gifts", { phase6: true })!;
+    const giftFields = Object.fromEntries(
+      gift.fields.map((field) => [field.name, field])
+    );
+    expect(emptyFieldValue(giftFields.rarity)).toBe("comune");
+    expect(emptyFieldValue(giftFields.preparation_status)).toBe("da_preparare");
   });
 
   it("rifiuta URL esterni nelle notifiche programmate", () => {

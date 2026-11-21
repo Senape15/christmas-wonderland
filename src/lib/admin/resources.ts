@@ -40,11 +40,18 @@ export interface FieldDef {
   /** Campo introdotto dalla migrazione 007 (Web Push): stesso comportamento. */
   phase7?: boolean;
   /**
-   * Valore usato quando il campo è vuoto. Serve alle colonne NOT NULL con
-   * default database: inviare `null` esplicito viola il vincolo, mentre
-   * ometterle applicherebbe il default. Qui il valore è noto e valido.
+   * Valore iniziale del form e valore salvato quando il campo è vuoto.
+   * Serve alle colonne NOT NULL con default database: inviare `null`
+   * esplicito viola il vincolo, mentre omettere la colonna applicherebbe
+   * il default. Qui il valore è noto e valido.
    */
   defaultValue?: string;
+  /**
+   * Valore salvato quando il campo è vuoto, senza precompilare il form.
+   * Usato dai campi JSON, il cui default DB è un oggetto (`{}`) o un array
+   * (`[]`), e dai testi che devono restare vuoti invece che NULL.
+   */
+  emptyValue?: unknown;
 }
 
 export interface ResourceDef {
@@ -138,6 +145,8 @@ const phase6Rarity: FieldDef = {
   label: "Rarità",
   type: "select",
   options: RARITY_OPTIONS,
+  // Colonna NOT NULL con default 'comune'.
+  defaultValue: "comune",
   phase6: true,
 };
 
@@ -165,7 +174,8 @@ export const RESOURCES: Record<string, ResourceDef> = {
     titleField: "title",
     orderBy: "day_number",
     fields: [
-      { ...day, readonly: true },
+      // day_number è NOT NULL e senza default: deve essere scelto alla creazione.
+      day,
       { name: "title", label: "Titolo", type: "text", required: true },
       { name: "description", label: "Descrizione", type: "textarea" },
       { name: "unlock_date", label: "Data di sblocco", type: "datetime", required: true },
@@ -220,7 +230,8 @@ export const RESOURCES: Record<string, ResourceDef> = {
       { ...hotspot, required: true },
       { name: "hint", label: "Indizio", type: "textarea" },
       { name: "nico_message", label: "Messaggio di Nico", type: "textarea" },
-      { name: "nico_expression", label: "Espressione di Nico", type: "select", options: [
+      // Colonna NOT NULL con default 'happy'.
+      { name: "nico_expression", label: "Espressione di Nico", type: "select", defaultValue: "happy", options: [
         { value: "happy", label: "Felice" },
         { value: "curious", label: "Curioso" },
         { value: "surprised", label: "Sorpreso" },
@@ -242,7 +253,8 @@ export const RESOURCES: Record<string, ResourceDef> = {
       { ...location, required: true },
       day,
       { name: "image_url", label: "URL immagine", type: "text" },
-      { name: "preparation_status", label: "Stato preparazione", type: "select", options: [
+      // Colonna NOT NULL con default 'da_preparare'.
+      { name: "preparation_status", label: "Stato preparazione", type: "select", defaultValue: "da_preparare", options: [
         { value: "da_preparare", label: "Da preparare" },
         { value: "in_preparazione", label: "In preparazione" },
         { value: "pronto", label: "Pronto" },
@@ -284,7 +296,7 @@ export const RESOURCES: Record<string, ResourceDef> = {
       { name: "password_required", label: "Password obbligatoria", type: "boolean", help: "La password si configura nella sezione Password." },
       { name: "password_hint", label: "Suggerimento password", type: "text" },
       { name: "success_message", label: "Messaggio dopo lo sblocco", type: "textarea" },
-      { name: "activation_conditions", label: "Condizioni di attivazione (JSON)", type: "json" },
+      { name: "activation_conditions", label: "Condizioni di attivazione (JSON)", type: "json", emptyValue: {} },
       { name: "admin_notes", label: "Note private admin", type: "textarea" },
       { name: "sort_order", label: "Ordine", type: "number", min: 0 },
       phase6Category,
@@ -302,6 +314,7 @@ export const RESOURCES: Record<string, ResourceDef> = {
         name: "related_content_ids",
         label: "Indizi collegati (JSON array di id)",
         type: "json",
+        emptyValue: [],
         phase6: true,
         help: "Solo indizi già scoperti vengono mostrati come collegati.",
       },
@@ -320,10 +333,11 @@ export const RESOURCES: Record<string, ResourceDef> = {
       { name: "symbol", label: "Simbolo", type: "text", required: true },
       { name: "description", label: "Descrizione", type: "textarea" },
       { name: "image_url", label: "URL immagine", type: "text" },
-      { name: "gift_id", label: "Regalo associato", type: "select", lookup: "gifts", uuid: true },
+      // Colonna NOT NULL: il simbolo deve essere collegato a un regalo.
+      { name: "gift_id", label: "Regalo associato", type: "select", lookup: "gifts", uuid: true, required: true },
       day,
       location,
-      { name: "discovery_conditions", label: "Condizioni di scoperta (JSON)", type: "json" },
+      { name: "discovery_conditions", label: "Condizioni di scoperta (JSON)", type: "json", emptyValue: {} },
       phase6Category,
       phase6Rarity,
       phase6Silhouette,
@@ -345,7 +359,7 @@ export const RESOURCES: Record<string, ResourceDef> = {
       { name: "hint", label: "Suggerimento", type: "textarea" },
       { name: "points", label: "Punteggio", type: "number", min: 0 },
       { name: "is_required", label: "Risposta obbligatoria", type: "boolean" },
-      { name: "unlock_conditions", label: "Condizioni di sblocco (JSON)", type: "json" },
+      { name: "unlock_conditions", label: "Condizioni di sblocco (JSON)", type: "json", emptyValue: {} },
       active,
     ],
     listFields: ["day_number", "question", "points", "is_active"],
@@ -456,10 +470,12 @@ export const RESOURCES: Record<string, ResourceDef> = {
         name: "dedupe_key",
         label: "Chiave anti-duplicato",
         type: "text",
+        // Indice univoco parziale su dedupe_key: "" collide, il vuoto deve essere NULL.
+        emptyValue: null,
         phase7: true,
         help: "Opzionale: identifica univocamente la notifica.",
       },
-      { name: "conditions", label: "Condizioni (JSON)", type: "json" },
+      { name: "conditions", label: "Condizioni (JSON)", type: "json", emptyValue: {} },
       active,
       {
         name: "status",
@@ -515,7 +531,7 @@ export const RESOURCES: Record<string, ResourceDef> = {
       location,
       { name: "is_unlocked", label: "Sbloccata", type: "boolean" },
       { name: "sort_order", label: "Ordine", type: "number", min: 0 },
-      { name: "activation_conditions", label: "Condizioni (JSON)", type: "json" },
+      { name: "activation_conditions", label: "Condizioni (JSON)", type: "json", emptyValue: {} },
       { name: "unlocked_at", label: "Sbloccata il", type: "datetime", readonly: true, phase6: true },
       { name: "discovered_at", label: "Scoperta il", type: "datetime", readonly: true, phase6: true },
     ],
@@ -543,6 +559,8 @@ export const RESOURCES: Record<string, ResourceDef> = {
         name: "kind",
         label: "Tipologia",
         type: "select",
+        // Colonna NOT NULL con default 'special'.
+        defaultValue: "special",
         options: [
           { value: "special", label: "Momento speciale" },
           { value: "letter", label: "Lettera" },
@@ -562,9 +580,11 @@ export const RESOURCES: Record<string, ResourceDef> = {
         name: "related_content_id",
         label: "Contenuto originale collegato",
         type: "text",
+        // Colonna uuid: una stringa vuota non è valida, il vuoto deve essere NULL.
+        uuid: true,
         help: "UUID del contenuto delle caselle a cui questo ricordo si riferisce.",
       },
-      { name: "activation_conditions", label: "Condizioni di sblocco (JSON)", type: "json" },
+      { name: "activation_conditions", label: "Condizioni di sblocco (JSON)", type: "json", emptyValue: {} },
       { name: "sort_order", label: "Ordine", type: "number", min: 0 },
       active,
     ],
@@ -615,6 +635,23 @@ export function defaultFormValues(resource: ResourceDef): Record<string, unknown
       field.defaultValue ?? (field.type === "boolean" ? false : "");
   }
   return values;
+}
+
+/**
+ * Valore da inviare quando il campo è vuoto.
+ *
+ * Le colonne `NOT NULL` rifiutano un `NULL` esplicito (`23502`), mentre un
+ * valore compatibile col tipo soddisfa il vincolo: stringa vuota per i testi,
+ * `{}` / `[]` per i JSON, `NULL` per i riferimenti opzionali (uuid, date,
+ * numeri). Va usato sia dal client sia da `adminSave` (difesa per client
+ * datati che inviano ancora `null`).
+ */
+export function emptyFieldValue(field: FieldDef): unknown {
+  if (field.defaultValue !== undefined) return field.defaultValue;
+  if (field.emptyValue !== undefined) return field.emptyValue;
+  if (field.uuid) return null;
+  if (field.type === "text" || field.type === "textarea") return "";
+  return null;
 }
 
 /**

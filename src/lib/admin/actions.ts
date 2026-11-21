@@ -4,7 +4,8 @@ import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getResource } from "@/lib/admin/resources";
+import { emptyFieldValue, getResource } from "@/lib/admin/resources";
+import { reportServerError } from "@/lib/server-error";
 import { pickAllowedValues, validateAdminValues } from "@/lib/admin/validation";
 import {
   detectPhase6Capabilities,
@@ -18,10 +19,9 @@ export interface ActionResult<T = undefined> {
 }
 
 function fail<T = undefined>(error: unknown): ActionResult<T> {
-  return {
-    ok: false,
-    error: error instanceof Error ? error.message : "Errore sconosciuto",
-  };
+  // Gli errori Supabase/PostgREST sono oggetti semplici, non istanze di Error:
+  // l'helper li registra sul server e restituisce il messaggio reale.
+  return { ok: false, error: reportServerError("admin/actions", error) };
 }
 
 function revalidate(resourceKey: string) {
@@ -78,10 +78,10 @@ export async function adminSave(
       const value = allowed[field.name];
       if (value === undefined) continue;
 
-      // Colonne NOT NULL con default: un NULL esplicito (form vuoto o client
-      // datato) violerebbe il vincolo al momento dell'INSERT.
-      if (field.defaultValue && (value === null || value === "")) {
-        payload[field.name] = field.defaultValue;
+      // Le colonne NOT NULL rifiutano un NULL esplicito (form vuoto o client
+      // datato): il vuoto assume il valore dichiarato nel campo.
+      if (value === null || value === "") {
+        payload[field.name] = emptyFieldValue(field);
         continue;
       }
 
@@ -89,10 +89,10 @@ export async function adminSave(
         try {
           payload[field.name] = JSON.parse(value);
         } catch {
-          return { ok: false, error: `JSON non valido in ${field.label}.` }
+          return { ok: false, error: `JSON non valido in ${field.label}.` };
         }
       } else {
-        payload[field.name] = value === "" && field.type !== "text" && field.type !== "textarea" ? null : value;
+        payload[field.name] = value;
       }
     }
 
