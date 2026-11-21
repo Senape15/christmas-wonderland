@@ -78,6 +78,13 @@ export async function adminSave(
       const value = allowed[field.name];
       if (value === undefined) continue;
 
+      // Colonne NOT NULL con default: un NULL esplicito (form vuoto o client
+      // datato) violerebbe il vincolo al momento dell'INSERT.
+      if (field.defaultValue && (value === null || value === "")) {
+        payload[field.name] = field.defaultValue;
+        continue;
+      }
+
       if (field.type === "json" && typeof value === "string") {
         try {
           payload[field.name] = JSON.parse(value);

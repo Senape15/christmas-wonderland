@@ -2,7 +2,12 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { getResource, type FieldDef, type ResourceDef } from "@/lib/admin/resources";
+import {
+  defaultFormValues,
+  getResource,
+  type FieldDef,
+  type ResourceDef,
+} from "@/lib/admin/resources";
 import { adminDelete, adminSave, uploadAdminImage } from "@/lib/admin/actions";
 import type { AdminRow, LookupOption } from "@/lib/services/admin";
 import { ConfirmDialog, EmptyState, Modal, Toast } from "./ui";
@@ -33,8 +38,11 @@ function toInputValue(field: FieldDef, value: unknown): unknown {
 }
 
 function toStoredValue(field: FieldDef, value: unknown): unknown {
-  if (value === "") return null;
-  if (field.type === "number") return value === "" || value === null ? null : Number(value);
+  if (value === "" || value === null || value === undefined) {
+    // Le colonne NOT NULL con default database non accettano un NULL esplicito.
+    return field.defaultValue ?? null;
+  }
+  if (field.type === "number") return Number(value);
   if (field.type === "json") {
     if (typeof value !== "string" || value.trim() === "") return field.name.includes("conditions") ? {} : [];
     try {
@@ -100,11 +108,7 @@ export function CrudManager({
     : rows;
 
   function openCreate() {
-    const initial: Record<string, unknown> = {};
-    for (const field of editableFields) {
-      initial[field.name] = field.type === "boolean" ? false : "";
-    }
-    setValues(initial);
+    setValues(defaultFormValues(resource));
     setIsNew(true);
     setEditing({});
   }

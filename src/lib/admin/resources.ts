@@ -39,6 +39,12 @@ export interface FieldDef {
   phase6?: boolean;
   /** Campo introdotto dalla migrazione 007 (Web Push): stesso comportamento. */
   phase7?: boolean;
+  /**
+   * Valore usato quando il campo è vuoto. Serve alle colonne NOT NULL con
+   * default database: inviare `null` esplicito viola il vincolo, mentre
+   * ometterle applicherebbe il default. Qui il valore è noto e valido.
+   */
+  defaultValue?: string;
 }
 
 export interface ResourceDef {
@@ -414,6 +420,7 @@ export const RESOURCES: Record<string, ResourceDef> = {
         options: NOTIFICATION_KIND_OPTIONS,
         required: true,
         phase7: true,
+        defaultValue: "special",
         help: "Determina preferenza utente e testo di fallback.",
       },
       {
@@ -422,6 +429,7 @@ export const RESOURCES: Record<string, ResourceDef> = {
         type: "select",
         options: NOTIFICATION_AUDIENCE_OPTIONS,
         phase7: true,
+        defaultValue: "all",
       },
       {
         name: "target_user_id",
@@ -439,6 +447,7 @@ export const RESOURCES: Record<string, ResourceDef> = {
         label: "Collegamento",
         type: "text",
         phase7: true,
+        defaultValue: "/dashboard",
         placeholder: "/dashboard",
         help: "Pagina aperta toccando la notifica.",
       },
@@ -596,6 +605,17 @@ export const RESOURCES: Record<string, ResourceDef> = {
 };
 
 export const RESOURCE_KEYS = Object.keys(RESOURCES);
+
+/** Valori iniziali del form: i default DB NOT NULL non restano vuoti. */
+export function defaultFormValues(resource: ResourceDef): Record<string, unknown> {
+  const values: Record<string, unknown> = {};
+  for (const field of resource.fields) {
+    if (field.readonly) continue;
+    values[field.name] =
+      field.defaultValue ?? (field.type === "boolean" ? false : "");
+  }
+  return values;
+}
 
 /**
  * Restituisce una risorsa. I campi delle fasi successive vengono inclusi solo

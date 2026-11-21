@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getResource } from "./resources";
+import { defaultFormValues, getResource } from "./resources";
 import { pickAllowedValues, validateAdminValues } from "./validation";
 
 describe("validazione admin", () => {
@@ -42,6 +42,26 @@ describe("validazione admin", () => {
   it("rifiuta ruoli non ammessi", () => {
     const resource = getResource("users")!;
     expect(validateAdminValues(resource, { role: "superadmin" }).success).toBe(false);
+  });
+
+  it("precompila le colonne NOT NULL delle notifiche con i default del database", () => {
+    const resource = getResource("scheduled_notifications", { phase7: true })!;
+    const values = defaultFormValues(resource);
+
+    expect(values).toMatchObject({
+      kind: "special",
+      audience: "all",
+      url: "/dashboard",
+      is_active: false,
+    });
+
+    // Il form converte i campi vuoti in null prima di inviarli al server.
+    const stored = Object.fromEntries(
+      Object.entries(values).map(([key, value]) => [key, value === "" ? null : value])
+    );
+    stored.title = "Promemoria";
+    stored.body = "Testo";
+    expect(validateAdminValues(resource, stored).success).toBe(true);
   });
 
   it("rifiuta URL esterni nelle notifiche programmate", () => {
