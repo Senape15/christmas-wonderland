@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { z } from "zod";
 import { requireUser } from "@/lib/auth";
+import { reportServerError } from "@/lib/server-error";
 import { createClient } from "@/lib/supabase/server";
 import { detectPushCapabilities } from "@/lib/services/capabilities";
 import { isPreferredTimeSendable } from "@/lib/push/rules";
@@ -123,7 +124,7 @@ export async function saveNotificationPreferences(
   } catch (error) {
     return {
       ok: false,
-      error: error instanceof Error ? error.message : "Errore sconosciuto",
+      error: reportServerError("push/actions", error),
     };
   }
 }
@@ -175,7 +176,7 @@ export async function registerPushSubscription(
   } catch (error) {
     return {
       ok: false,
-      error: error instanceof Error ? error.message : "Errore sconosciuto",
+      error: reportServerError("push/actions", error),
     };
   }
 }
@@ -205,7 +206,7 @@ export async function removePushSubscription(
   } catch (error) {
     return {
       ok: false,
-      error: error instanceof Error ? error.message : "Errore sconosciuto",
+      error: reportServerError("push/actions", error),
     };
   }
 }
@@ -236,7 +237,7 @@ export async function removePushSubscriptionById(
   } catch (error) {
     return {
       ok: false,
-      error: error instanceof Error ? error.message : "Errore sconosciuto",
+      error: reportServerError("push/actions", error),
     };
   }
 }
@@ -261,7 +262,7 @@ export async function removeAllPushSubscriptions(): Promise<PushResult> {
   } catch (error) {
     return {
       ok: false,
-      error: error instanceof Error ? error.message : "Errore sconosciuto",
+      error: reportServerError("push/actions", error),
     };
   }
 }

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/auth";
+import { reportServerError } from "@/lib/server-error";
 import {
   dispatchNotificationNow,
   runNotificationCycle,
@@ -43,7 +44,7 @@ export async function adminSendNotificationNow(
   } catch (error) {
     return {
       ok: false,
-      error: error instanceof Error ? error.message : "Errore sconosciuto",
+      error: reportServerError("push/admin-actions", error),
     };
   }
 }
@@ -57,7 +58,7 @@ export async function adminSendTestNotification(): Promise<AdminSendResult> {
   } catch (error) {
     return {
       ok: false,
-      error: error instanceof Error ? error.message : "Errore sconosciuto",
+      error: reportServerError("push/admin-actions", error),
     };
   }
 }
@@ -85,7 +86,7 @@ export async function adminRunNotificationCycle(): Promise<AdminSendResult> {
   } catch (error) {
     return {
       ok: false,
-      error: error instanceof Error ? error.message : "Errore sconosciuto",
+      error: reportServerError("push/admin-actions", error),
     };
   }
 }
