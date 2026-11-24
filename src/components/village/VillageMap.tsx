@@ -8,6 +8,7 @@ import { HotspotMarker } from "./HotspotMarker";
 import {
   VILLAGE_WORLD,
   clampView,
+  coverView,
   fitView,
   panViewBy,
   rectForPercentPoints,
@@ -32,6 +33,14 @@ interface VillageMapProps {
   focusZone: ZoneFocusRequest | null;
   starLit: boolean;
   className?: string;
+  /**
+   * `framed` è la mappa dentro una scheda (bordo, angoli, altezza fissa).
+   * `bare` riempie il contenitore: la usa la scena "paesaggio" della home.
+   */
+  variant?: "framed" | "bare";
+  hideZoneNav?: boolean;
+  hideHint?: boolean;
+  controlsClassName?: string;
 }
 
 function round(value: number): number {
@@ -47,6 +56,20 @@ function midpoint(a: { x: number; y: number }, b: { x: number; y: number }) {
 }
 
 const EMPTY_SIZE: Size = { width: 0, height: 0 };
+
+/**
+ * In verticale la scena "bare" usa una vista che riempie il contenitore:
+ * un fit completo lascerebbe troppo cielo/neve vuoti sopra e sotto.
+ */
+function initialViewFor(
+  size: Size,
+  variant: "framed" | "bare"
+): MapView {
+  if (variant === "bare" && size.height > size.width * 1.05) {
+    return coverView(size);
+  }
+  return fitView(size);
+}
 
 /**
  * Mappa interattiva del villaggio.
@@ -68,6 +91,10 @@ export function VillageMap({
   focusZone,
   starLit,
   className,
+  variant = "framed",
+  hideZoneNav = false,
+  hideHint = false,
+  controlsClassName,
 }: VillageMapProps) {
   const reducedMotion = useReducedMotion();
   const viewportRef = useRef<HTMLDivElement>(null);
@@ -120,13 +147,13 @@ export function VillageMap({
 
     if (!fittedRef.current) {
       fittedRef.current = true;
-      setView(fitView(size));
+      setView(initialViewFor(size, variant));
       setIsFitted(true);
       return;
     }
 
     setView((current) => clampView(current, size));
-  }, [size]);
+  }, [size, variant]);
 
   /* Inquadratura di zona richiesta da schede o pulsanti. */
   useEffect(() => {
@@ -256,8 +283,8 @@ export function VillageMap({
   }, []);
 
   const resetView = useCallback(() => {
-    setView(fitView(sizeRef.current));
-  }, []);
+    setView(initialViewFor(sizeRef.current, variant));
+  }, [variant]);
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     if (event.target !== event.currentTarget) return;
@@ -306,32 +333,39 @@ export function VillageMap({
 
   return (
     <div className={cn("flex flex-col gap-3", className)}>
-      <div className="flex flex-wrap gap-2" aria-label="Vai a una zona">
-        {zones.map((zone) => (
-          <button
-            key={zone.id}
-            type="button"
-            onClick={() => onRequestZone(zone.slug)}
-            className="rounded-full border border-cream-300/20 bg-pine-900/50 px-3 py-1.5 text-xs font-medium text-cream-200/80 transition-colors hover:border-gold/50 hover:text-gold-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
-          >
-            {zone.name}
-          </button>
-        ))}
-      </div>
+      {!hideZoneNav && (
+        <div className="flex flex-wrap gap-2" aria-label="Vai a una zona">
+          {zones.map((zone) => (
+            <button
+              key={zone.id}
+              type="button"
+              onClick={() => onRequestZone(zone.slug)}
+              className="rounded-full border border-cream-300/20 bg-pine-900/50 px-3 py-1.5 text-xs font-medium text-cream-200/80 transition-colors hover:border-gold/50 hover:text-gold-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
+            >
+              {zone.name}
+            </button>
+          ))}
+        </div>
+      )}
 
-      <div className="relative">
+      <div className={cn("relative", variant === "bare" && "h-full")}>
         <div
           ref={viewportRef}
           tabIndex={0}
           role="group"
           aria-label="Mappa interattiva del villaggio"
-          aria-describedby={hintId}
+          aria-describedby={hideHint ? undefined : hintId}
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={endPointer}
           onPointerCancel={endPointer}
           onKeyDown={handleKeyDown}
-          className="relative h-[54vh] max-h-[620px] min-h-[330px] w-full touch-none select-none overflow-hidden rounded-3xl border border-cream-300/20 bg-[linear-gradient(180deg,#071427_0%,#10233d_45%,#1d3b58_100%)] shadow-[var(--shadow-card)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-pine-900"
+          className={cn(
+            "relative w-full touch-none select-none overflow-hidden bg-[linear-gradient(180deg,#071427_0%,#10233d_45%,#1d3b58_100%)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-pine-900",
+            variant === "framed"
+              ? "h-[54vh] max-h-[620px] min-h-[330px] rounded-3xl border border-cream-300/20 shadow-[var(--shadow-card)]"
+              : "h-full"
+          )}
         >
           <div
             className="absolute left-0 top-0 origin-top-left"
@@ -357,7 +391,10 @@ export function VillageMap({
 
           {/* Controlli */}
           <div
-            className="absolute bottom-3 right-3 flex flex-col gap-1.5"
+            className={cn(
+              "absolute bottom-3 right-3 flex flex-col gap-1.5",
+              controlsClassName
+            )}
             onPointerDown={(event) => event.stopPropagation()}
           >
             <button
@@ -395,13 +432,15 @@ export function VillageMap({
           </div>
         </div>
 
-        <p
-          id={hintId}
-          className="mt-2 text-center text-[11px] text-cream-200/50"
-        >
-          Trascina per esplorare · rotella o pizzico per lo zoom · frecce e +/−
-          da tastiera
-        </p>
+        {!hideHint && (
+          <p
+            id={hintId}
+            className="mt-2 text-center text-[11px] text-cream-200/50"
+          >
+            Trascina per esplorare · rotella o pizzico per lo zoom · frecce e +/−
+            da tastiera
+          </p>
+        )}
       </div>
     </div>
   );

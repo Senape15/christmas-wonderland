@@ -1,9 +1,8 @@
 import Link from "next/link";
 import type { CurrentUser } from "@/lib/auth";
 import { Snowfall } from "@/components/animations/Snowfall";
-import { FadingLights } from "@/components/animations/FadingLights";
-import { LogoutButton } from "@/components/layout/logout-button";
-import { cn } from "@/lib/utils";
+import { NavIcon } from "@/components/layout/nav-icons";
+import { MenuButton } from "@/components/layout/app-navigation";
 import { MEMORY_NAV } from "@/lib/memory-nav";
 
 export function MemoryShell({
@@ -19,77 +18,65 @@ export function MemoryShell({
   subtitle: string;
   children: React.ReactNode;
 }) {
-  return (
-    <div className="relative min-h-screen overflow-hidden bg-pine-900 text-cream-50">
-      <Snowfall count={36} className="fixed inset-0 z-0 opacity-60" />
+  const activeItem = MEMORY_NAV.find((item) => item.href === active);
 
-      <header className="relative z-10 border-b border-cream-300/10 bg-pine-950/60 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-5 py-4 sm:px-8">
-          <div className="flex items-center gap-3">
-            <Link
-              href="/dashboard"
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-christmas-red text-lg shadow-[var(--shadow-glow-red)]"
-              aria-label="Torna al calendario"
-            >
-              🎄
-            </Link>
-            <div>
-              <h1 className="text-lg font-bold tracking-tight text-gold-light">
-                Christmas Wonderland
-              </h1>
-              <p className="text-xs text-cream-300/60">Il libro dei ricordi</p>
-            </div>
+  return (
+    <div className="relative min-h-screen overflow-x-hidden bg-pine-950 text-cream-50">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-0 z-0 bg-[radial-gradient(circle_at_20%_0%,rgba(212,168,67,0.10),transparent_45%),radial-gradient(circle_at_80%_15%,rgba(196,30,58,0.10),transparent_40%)]"
+      />
+      <Snowfall count={32} className="fixed inset-0 z-0 opacity-50" />
+
+      <header className="sticky top-0 z-40 border-b border-cream-300/10 bg-pine-950/80 backdrop-blur-xl">
+        <div className="mx-auto flex h-16 max-w-6xl items-center gap-2.5 px-4 sm:px-6">
+          <Link
+            href="/dashboard"
+            aria-label="Torna alla dashboard"
+            className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-cream-300/15 bg-pine-900/50 text-cream-100 transition-colors hover:border-gold/40 hover:text-gold-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
+          >
+            <NavIcon name="arrowRight" className="h-5 w-5 rotate-180" />
+          </Link>
+          <div className="min-w-0">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-gold-light/65">
+              Il libro dei ricordi
+            </p>
+            <p className="truncate text-sm font-bold text-cream-50">
+              Christmas Wonderland
+            </p>
           </div>
-          <div className="flex items-center gap-4">
-            <span className="hidden text-xs text-cream-300/60 sm:inline">
+          <div className="ml-auto flex items-center gap-2">
+            <span className="hidden max-w-[12rem] truncate text-xs text-cream-300/55 sm:inline">
               {user.name ?? user.email}
             </span>
-            <LogoutButton />
+            <MenuButton />
           </div>
         </div>
-
-        <nav aria-label="Sezioni dei ricordi" className="mx-auto max-w-6xl px-3 pb-2 sm:px-6">
-          <ul className="flex flex-wrap items-center justify-center gap-1">
-            {MEMORY_NAV.map((item) => (
-              <li key={item.href}>
-                <Link
-                  href={item.href}
-                  aria-current={active === item.href ? "page" : undefined}
-                  className={cn(
-                    "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
-                    active === item.href
-                      ? "bg-gold text-pine-950 shadow-[var(--shadow-glow-gold)]"
-                      : "text-cream-200/70 hover:bg-cream-300/10 hover:text-cream-50"
-                  )}
-                >
-                  <span aria-hidden="true">{item.emoji}</span>
-                  {item.label}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
       </header>
 
-      <main className="relative z-10 mx-auto max-w-6xl px-5 py-8 sm:px-8">
-        <div className="memory-book rounded-3xl border border-gold/25 p-5 shadow-[var(--shadow-glow-gold)] sm:p-8">
-          <FadingLights count={10} className="mb-4" />
-          <div className="mb-7 border-b border-gold/20 pb-5">
-            <p className="text-xs uppercase tracking-[0.24em] text-gold-light/80">
-              Ricordi di Natale
-            </p>
-            <h2 className="font-display text-2xl font-bold text-cream-50 sm:text-3xl">
-              {title}
-            </h2>
-            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-cream-200/75">
-              {subtitle}
-            </p>
+      <main className="relative z-10 mx-auto max-w-6xl px-4 pb-32 pt-5 sm:px-6 sm:pt-6">
+        <div className="memory-book rounded-[30px] border border-gold/20 p-5 shadow-[0_24px_70px_rgba(0,0,0,0.35)] sm:p-8">
+          <div className="mb-6 flex items-start gap-3 border-b border-gold/15 pb-5">
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-gold/25 bg-gold/10 text-gold-light">
+              <NavIcon name={activeItem?.icon ?? "diary"} />
+            </span>
+            <div className="min-w-0">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-gold-light/70">
+                Ricordi di Natale
+              </p>
+              <h1 className="mt-1 font-display text-2xl font-bold leading-tight text-cream-50 sm:text-3xl">
+                {title}
+              </h1>
+              <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-cream-200/70">
+                {subtitle}
+              </p>
+            </div>
           </div>
           {children}
         </div>
       </main>
 
-      <footer className="relative z-10 pb-6 text-center text-xs text-cream-300/40">
+      <footer className="relative z-10 pb-28 text-center text-[11px] text-cream-300/40">
         Christmas Wonderland · Ogni ricordo è solo tuo
       </footer>
     </div>

@@ -5,8 +5,16 @@ import { useRouter } from "next/navigation";
 import { signOut } from "@/lib/supabase/auth-client";
 import { removePushSubscription } from "@/lib/push/actions";
 import { unsubscribeFromPush } from "@/lib/pwa/client";
+import { NavIcon } from "@/components/layout/nav-icons";
+import { cn } from "@/lib/utils";
 
-export function LogoutButton() {
+export function LogoutButton({
+  className,
+  label = "Esci",
+}: {
+  className?: string;
+  label?: string;
+}) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
 
@@ -43,9 +51,13 @@ export function LogoutButton() {
       onClick={handleLogout}
       disabled={busy}
       aria-busy={busy}
-      className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-full text-sm font-medium transition-colors disabled:opacity-60"
+      className={cn(
+        "inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-christmas-red px-4 py-2.5 text-sm font-semibold text-cream-50 transition-colors hover:bg-christmas-red-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold disabled:opacity-60",
+        className
+      )}
     >
-      {busy ? "Esco…" : "Logout"}
+      <NavIcon name="logout" className="h-4 w-4" />
+      {busy ? "Esco…" : label}
     </button>
   );
 }

@@ -104,7 +104,7 @@ export function InstallPrompt() {
   if (hint === "installed") {
     if (installedDismissed) return null;
     return (
-      <div className="fixed bottom-4 left-4 z-40 flex items-center gap-2 rounded-full border border-pine-300/40 bg-pine-950/90 px-3 py-1.5 text-[11px] text-cream-100 shadow-[var(--shadow-card)] backdrop-blur">
+      <div className="fixed bottom-24 left-4 z-40 flex items-center gap-2 rounded-full border border-pine-300/40 bg-pine-950/90 px-3 py-1.5 text-[11px] text-cream-100 shadow-[var(--shadow-card)] backdrop-blur">
         <span aria-hidden="true">✓</span> App installata
         <button
           type="button"
@@ -123,7 +123,7 @@ export function InstallPrompt() {
   return (
     <aside
       aria-label="Installa Christmas Wonderland"
-      className="fixed bottom-4 left-4 right-4 z-40 mx-auto max-w-sm rounded-2xl border border-gold/35 bg-pine-950/95 p-4 text-cream-100 shadow-[var(--shadow-glow-gold)] backdrop-blur sm:right-auto"
+      className="fixed bottom-24 left-4 right-4 z-40 mx-auto max-w-sm rounded-2xl border border-gold/35 bg-pine-950/95 p-4 text-cream-100 shadow-[var(--shadow-glow-gold)] backdrop-blur sm:right-auto"
     >
       <div className="flex items-start gap-3">
         <span

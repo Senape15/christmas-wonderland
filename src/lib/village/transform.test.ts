@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   VILLAGE_WORLD,
   clampView,
+  computeCoverScale,
   computeFitScale,
+  coverView,
   fitView,
   panViewBy,
   projectPercentPoint,
@@ -33,6 +35,37 @@ describe("fitView", () => {
     expect(view.scale).toBeCloseTo(EXPECTED_FIT, 10);
     expect(view.x).toBeCloseTo((VIEWPORT.width - VILLAGE_WORLD.width * EXPECTED_FIT) / 2, 6);
     expect(view.y).toBeCloseTo(0, 6);
+  });
+});
+
+describe("coverView", () => {
+  const PORTRAIT = { width: 390, height: 480 };
+
+  it("fills the viewport instead of letterboxing", () => {
+    const scale = computeCoverScale(PORTRAIT);
+    const view = coverView(PORTRAIT);
+
+    expect(scale).toBeCloseTo(PORTRAIT.height / VILLAGE_WORLD.height, 10);
+    expect(view.scale).toBeCloseTo(scale, 10);
+    expect(VILLAGE_WORLD.width * view.scale).toBeGreaterThanOrEqual(
+      PORTRAIT.width
+    );
+    expect(VILLAGE_WORLD.height * view.scale).toBeGreaterThanOrEqual(
+      PORTRAIT.height
+    );
+  });
+
+  it("centers the cropped scene", () => {
+    const view = coverView(PORTRAIT);
+
+    expect(view.x).toBeCloseTo(
+      (PORTRAIT.width - VILLAGE_WORLD.width * view.scale) / 2,
+      6
+    );
+    expect(view.y).toBeCloseTo(
+      (PORTRAIT.height - VILLAGE_WORLD.height * view.scale) / 2,
+      6
+    );
   });
 });
 

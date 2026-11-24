@@ -66,6 +66,26 @@ export function fitView(viewport: Size, world: Size = VILLAGE_WORLD): MapView {
   };
 }
 
+/** Scala minima perché il mondo copra interamente il viewport (ritaglio). */
+export function computeCoverScale(viewport: Size, world: Size = VILLAGE_WORLD): number {
+  if (!isValidSize(viewport) || !isValidSize(world)) return 0.0001;
+  return Math.max(viewport.width / world.width, viewport.height / world.height);
+}
+
+/**
+ * Vista "scenica": riempie il viewport e ritaglia i lati (o l'alto/basso).
+ * La usa la home in verticale, dove un fit completo lascerebbe ampie barre
+ * vuote sopra e sotto il villaggio.
+ */
+export function coverView(viewport: Size, world: Size = VILLAGE_WORLD): MapView {
+  const scale = computeCoverScale(viewport, world);
+  return {
+    x: (viewport.width - world.width * scale) / 2,
+    y: (viewport.height - world.height * scale) / 2,
+    scale,
+  };
+}
+
 /**
  * Impedisce di perdere la mappa fuori dallo schermo.
  *

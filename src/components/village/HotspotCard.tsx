@@ -62,8 +62,16 @@ export function HotspotCard({
       transition={{ duration: 0.25, ease: "easeOut" }}
       aria-labelledby={titleId}
       aria-live="polite"
-      className="relative overflow-hidden rounded-2xl border border-cream-300/20 bg-pine-950/70 p-4 shadow-[var(--shadow-card)] backdrop-blur-sm sm:p-5"
+      className="relative overflow-hidden rounded-[28px] border border-cream-300/20 bg-pine-950/95 p-4 pb-5 shadow-[0_-18px_60px_rgba(0,0,0,0.5)] backdrop-blur-2xl sm:p-5"
     >
+      <span
+        aria-hidden="true"
+        className="absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-gold/10 to-transparent"
+      />
+      <span
+        aria-hidden="true"
+        className="mx-auto mb-3 block h-1 w-10 rounded-full bg-cream-300/20 sm:hidden"
+      />
       <button
         type="button"
         onClick={onClose}
@@ -125,7 +133,7 @@ export function HotspotCard({
           type="button"
           onClick={() => onOpen(dayNumber)}
           disabled={isOpening}
-          className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gold px-4 py-2.5 text-sm font-semibold text-pine-950 transition-colors hover:bg-gold-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-light focus-visible:ring-offset-2 focus-visible:ring-offset-pine-950 disabled:cursor-wait disabled:opacity-70"
+          className="mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-gold-light via-gold to-gold-dark px-4 py-2.5 text-sm font-bold text-pine-950 transition-[filter] hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-light focus-visible:ring-offset-2 focus-visible:ring-offset-pine-950 disabled:cursor-wait disabled:opacity-70"
         >
           {isOpening ? "Apertura…" : `Apri il giorno ${dayNumber}`}
         </button>
