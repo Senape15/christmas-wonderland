@@ -18,6 +18,7 @@ verificato: mancano chiavi VAPID e scheduler.
 | TypeScript      | Tipizzazione end-to-end                        |
 | Tailwind CSS 4  | Stili, tema natalizio custom                   |
 | Supabase        | PostgreSQL (RLS), Auth, Storage                |
+| Godot 4.7       | Villaggio 2D navigabile esportato in Web        |
 | Framer Motion   | Animazioni di apertura e interazione            |
 | Zod             | Validazione server-side                        |
 | web-push        | Notifiche Web Push con VAPID                   |
@@ -141,6 +142,8 @@ delle PWA) e [docs/](./docs/) per i dettagli.
 ## Struttura del progetto
 
 ```
+godot/
+  christmas-village/ Sorgente Godot 4.7 del villaggio (esportazione Web in public/village/)
 src/
   app/              Route App Router (login, register, dashboard, admin, api)
   components/
@@ -241,7 +244,7 @@ docs/               Documentazione tecnica
 ## Test
 
 ```bash
-npm test          # Vitest: 272 test (utils, calendario, villaggio, admin, Fase 5, Fase 6, Fase 7, Fase 8)
+npm test          # Vitest: 274 test (utils, calendario, villaggio, admin, Fase 5, Fase 6, Fase 7, Fase 8)
 npm run lint
 npm run typecheck
 npm run build

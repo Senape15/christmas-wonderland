@@ -37,7 +37,7 @@ describe("Service Worker", () => {
   });
 
   it("memorizza solo asset statici e versiona la cache", () => {
-    expect(sw).toContain('const CACHE_VERSION = "cw-v1"');
+    expect(sw).toContain('const CACHE_VERSION = "cw-v2"');
     expect(sw).toContain("STATIC_CACHE");
     expect(sw).toContain('url.pathname.startsWith("/_next/static/")');
     expect(sw).not.toContain("supabase.co");

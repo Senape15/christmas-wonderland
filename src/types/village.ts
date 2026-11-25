@@ -118,6 +118,15 @@ export interface VillageHotspot {
   sortOrder: number;
 }
 
+/** Battuta di un personaggio nel villaggio (chiave = kind del luogo). */
+export type VillageDialogueLine = ["npc" | "nico", string];
+
+/**
+ * Frasi configurate dall'admin tramite i quiz, già filtrate per giorno
+ * sbloccato e per risposte completate dall'utente.
+ */
+export type VillageDialogues = Record<string, VillageDialogueLine[]>;
+
 /** Fase narrativa derivata dal calendario reale (nessuna data inventata). */
 export type StoryPhase = "attesa" | "in-corso" | "completo";
 

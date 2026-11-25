@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { getExperienceData } from "@/lib/services/experience";
 import { getVillageData } from "@/lib/services/village";
+import { getVillageDialogues } from "@/lib/services/village-dialogues";
 
 /**
  * Dati del villaggio per il client Godot (/village/index.html).
@@ -17,7 +18,8 @@ export async function GET() {
   }
   const experience = await getExperienceData(user);
   const village = await getVillageData(experience.calendar);
-  return NextResponse.json(village, {
+  const dialogues = await getVillageDialogues(user, village);
+  return NextResponse.json({ ...village, dialogues }, {
     headers: { "Cache-Control": "no-store" },
   });
 }

@@ -1,13 +1,11 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
 import { signIn } from "@/lib/supabase/auth-client";
 
 export function LoginForm() {
   const [error, setError] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(false);
-  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -22,8 +20,9 @@ export function LoginForm() {
     try {
       const { error: signInError } = await signIn({ email, password });
       if (signInError) throw signInError;
-      router.push("/dashboard");
-      router.refresh();
+      // Navigazione piena: il cookie di sessione viene letto dal proxy e dal
+      // server con la prima richiesta, senza race con il router client.
+      window.location.assign(new URL("/dashboard", window.location.origin).href);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Errore di accesso. Riprova."

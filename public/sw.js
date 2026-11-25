@@ -11,7 +11,7 @@
  * cancella le cache con versione diversa in fase di activate.
  */
 
-const CACHE_VERSION = "cw-v1";
+const CACHE_VERSION = "cw-v2";
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 /** In sviluppo gli asset cambiano a ogni HMR: niente cache statica. */
 const IS_DEV = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(self.location.hostname);

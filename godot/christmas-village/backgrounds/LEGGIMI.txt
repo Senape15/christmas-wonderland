@@ -1,0 +1,17 @@
+SFONDI DEI LUOGHI
+Metti qui le immagini (16:9, meglio 1920x1080, formato .png o .jpg).
+Il nome del file e' il "kind" del luogo. Se manca, il gioco usa lo sfondo provvisorio.
+
+PIAZZA CENTRALE:   tree.png  fountain.png  bench.png  lamp.png   (+ finalbox.png per la scatola finale)
+UFFICIO POSTALE:   mailbox.png  post-counter.png  archive.png  sled.png
+PASTICCERIA:       oven.png  pastry-window.png  cafe-table.png  pantry.png
+NEGOZIO GIOCATTOLI: toy-train.png  toy-window.png  toy-shelf.png  rocking-horse.png
+LABORATORIO:       workbench.png  fireplace.png  toy-machine.png  warehouse.png
+LAGO GHIACCIATO:   bridge.png  chalet.png  lake-sled.png  shore-lantern.png
+
+SCORCIATOIA: uno sfondo unico per tutto un quartiere si chiama zone_<quartiere>.png, ad esempio
+zone_pasticceria.png, zone_piazza-centrale.png, zone_ufficio-postale.png,
+zone_negozio-giocattoli.png, zone_laboratorio-babbo-natale.png, zone_lago-ghiacciato.png
+(usato solo per i luoghi che non hanno un file loro).
+
+Dopo aver aggiunto i file: riesporta in Web.
