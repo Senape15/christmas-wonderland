@@ -15,10 +15,12 @@ export function SettingsView({
   user,
   overview,
   vapidPublicKey,
+  passwordMessage = null,
 }: {
   user: CurrentUser;
   overview: NotificationOverview;
   vapidPublicKey: string;
+  passwordMessage?: { ok: boolean; text: string } | null;
 }) {
   const [tab, setTab] = useState<Tab>("account");
 
@@ -113,6 +115,75 @@ export function SettingsView({
                 </Link>
               )}
             </div>
+          </section>
+
+          <section className="rounded-[28px] border border-cream-300/12 bg-pine-900/35 p-5 sm:p-6">
+            <h2 className="font-display text-lg font-semibold text-cream-50">
+              Cambia password
+            </h2>
+            <p className="mt-1 text-sm leading-relaxed text-cream-200/70">
+              Conferma la password attuale e scegliane una nuova di almeno 8
+              caratteri.
+            </p>
+
+            {passwordMessage && (
+              <p
+                role={passwordMessage.ok ? "status" : "alert"}
+                className={cn(
+                  "mt-3 rounded-xl border px-3 py-2 text-sm",
+                  passwordMessage.ok
+                    ? "border-gold/40 bg-gold/10 text-gold-light"
+                    : "border-christmas-red/40 bg-christmas-red/10 text-christmas-red-light"
+                )}
+              >
+                {passwordMessage.text}
+              </p>
+            )}
+
+            <form
+              method="post"
+              action="/api/auth/password"
+              className="mt-4 grid gap-3 sm:grid-cols-3"
+            >
+              <label className="block text-xs font-semibold text-cream-200/70">
+                Password attuale
+                <input
+                  type="password"
+                  name="currentPassword"
+                  autoComplete="current-password"
+                  required
+                  className="mt-1 w-full rounded-xl border border-cream-300/20 bg-pine-950/60 px-3 py-2.5 text-sm text-cream-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
+                />
+              </label>
+              <label className="block text-xs font-semibold text-cream-200/70">
+                Nuova password
+                <input
+                  type="password"
+                  name="newPassword"
+                  autoComplete="new-password"
+                  minLength={8}
+                  required
+                  className="mt-1 w-full rounded-xl border border-cream-300/20 bg-pine-950/60 px-3 py-2.5 text-sm text-cream-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
+                />
+              </label>
+              <label className="block text-xs font-semibold text-cream-200/70">
+                Conferma
+                <input
+                  type="password"
+                  name="confirmPassword"
+                  autoComplete="new-password"
+                  minLength={8}
+                  required
+                  className="mt-1 w-full rounded-xl border border-cream-300/20 bg-pine-950/60 px-3 py-2.5 text-sm text-cream-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
+                />
+              </label>
+              <button
+                type="submit"
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl bg-gold px-4 py-2.5 text-sm font-bold text-pine-950 transition-[filter] hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-light sm:col-span-3"
+              >
+                Aggiorna password
+              </button>
+            </form>
           </section>
 
           <section className="rounded-[28px] border border-cream-300/12 bg-pine-900/35 p-5 sm:p-6">

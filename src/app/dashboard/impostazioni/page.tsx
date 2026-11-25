@@ -9,9 +9,21 @@ export const metadata = {
   title: "Impostazioni · Christmas Wonderland",
 };
 
-async function SettingsData() {
+async function SettingsData({
+  searchParams,
+}: {
+  searchParams: Promise<{ passwordError?: string; passwordUpdated?: string }>;
+}) {
+  const params = await searchParams;
   const user = await requireUser();
   const overview = await getNotificationOverview(user.id);
+
+  const passwordMessage =
+    params.passwordUpdated === "1"
+      ? { ok: true, text: "Password aggiornata." }
+      : params.passwordError
+        ? { ok: false, text: params.passwordError }
+        : null;
 
   return (
     <PageShell
@@ -24,12 +36,17 @@ async function SettingsData() {
         user={user}
         overview={overview}
         vapidPublicKey={publicVapidKey()}
+        passwordMessage={passwordMessage}
       />
     </PageShell>
   );
 }
 
-export default function SettingsPage() {
+export default function SettingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ passwordError?: string; passwordUpdated?: string }>;
+}) {
   return (
     <Suspense
       fallback={
@@ -40,7 +57,7 @@ export default function SettingsPage() {
         </div>
       }
     >
-      <SettingsData />
+      <SettingsData searchParams={searchParams} />
     </Suspense>
   );
 }
