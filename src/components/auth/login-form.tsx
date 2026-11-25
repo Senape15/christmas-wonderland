@@ -3,8 +3,12 @@
 import * as React from "react";
 import { signIn } from "@/lib/supabase/auth-client";
 
-export function LoginForm() {
-  const [error, setError] = React.useState<string | null>(null);
+export function LoginForm({
+  initialError = null,
+}: {
+  initialError?: string | null;
+}) {
+  const [error, setError] = React.useState<string | null>(initialError);
   const [loading, setLoading] = React.useState(false);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -33,7 +37,12 @@ export function LoginForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form
+      method="post"
+      action="/api/auth/login"
+      onSubmit={handleSubmit}
+      className="space-y-4"
+    >
       <div className="space-y-2">
         <label htmlFor="login-email" className="text-sm font-medium text-white">Email</label>
         <input

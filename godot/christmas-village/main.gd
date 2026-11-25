@@ -125,7 +125,6 @@ func _ready() -> void:
 	Api.request_failed.connect(func(m):
 		_hide_loader()
 		_show("Ops", m, 0))
-	_setup_js_back()
 	Api.fetch_village()
 	_maybe_screenshot()
 
@@ -311,30 +310,38 @@ func _snow(amount: int, vmin: float, vmax: float, smin: float, smax: float, alph
 
 # ---------------------------------------------------------------- interfaccia
 
-func _btn_style(bg: Color) -> StyleBoxFlat:
+func _btn_style(bg: Color, k := 1.0) -> StyleBoxFlat:
 	var s := StyleBoxFlat.new()
 	s.bg_color = bg
-	s.set_corner_radius_all(12)
+	s.set_corner_radius_all(int(round(12 * k)))
 	s.border_color = bg.lightened(0.35)
-	s.set_border_width_all(2)
-	s.content_margin_left = 16.0
-	s.content_margin_right = 16.0
-	s.content_margin_top = 8.0
-	s.content_margin_bottom = 8.0
+	s.set_border_width_all(int(round(2 * k)))
+	s.content_margin_left = 16.0 * k
+	s.content_margin_right = 16.0 * k
+	s.content_margin_top = 8.0 * k
+	s.content_margin_bottom = 8.0 * k
 	return s
 
 func _make_theme() -> Theme:
 	var th := Theme.new()
-	th.set_stylebox("normal", "Button", _btn_style(Color("2e7d4f")))
-	th.set_stylebox("hover", "Button", _btn_style(Color("3a9a62")))
-	th.set_stylebox("pressed", "Button", _btn_style(Color("1f5f3a")))
+	th.set_stylebox("normal", "Button", _btn_style(Color("2e7d4f"), ui_k))
+	th.set_stylebox("hover", "Button", _btn_style(Color("3a9a62"), ui_k))
+	th.set_stylebox("pressed", "Button", _btn_style(Color("1f5f3a"), ui_k))
 	th.set_stylebox("focus", "Button", StyleBoxEmpty.new())
 	th.set_color("font_color", "Button", Color.WHITE)
 	th.set_color("font_hover_color", "Button", Color.WHITE)
 	th.set_color("font_pressed_color", "Button", Color.WHITE)
-	th.set_font_size("font_size", "Button", 18)
+	th.set_font_size("font_size", "Button", int(round(18 * ui_k)))
 	th.set_font_size("font_size", "Label", 18)
 	return th
+
+func _apply_button_scale(k: float) -> void:
+	if ui_theme == null:
+		return
+	ui_theme.set_font_size("font_size", "Button", int(round(18 * k)))
+	ui_theme.set_stylebox("normal", "Button", _btn_style(Color("2e7d4f"), k))
+	ui_theme.set_stylebox("hover", "Button", _btn_style(Color("3a9a62"), k))
+	ui_theme.set_stylebox("pressed", "Button", _btn_style(Color("1f5f3a"), k))
 
 ## Su un telefono verticale il viewport 1280x720 viene scalato a ~0.34:
 ## i controlli in pixel sarebbero minuscoli. Questo fattore li riporta a
@@ -375,10 +382,13 @@ func _apply_ui_scale() -> void:
 		nico_text.custom_minimum_size = Vector2(240 * k, 0)
 	if nico_actions != null:
 		nico_actions.add_theme_constant_override("separation", int(round(8 * k)))
+	_apply_button_scale(k)
 	if header_title != null:
 		header_title.add_theme_font_size_override("font_size", int(round(18 * k)))
 	if header_sub != null:
 		header_sub.add_theme_font_size_override("font_size", int(round(14 * k)))
+		var w := float(JavaScriptBridge.eval("window.innerWidth"))
+		header_sub.visible = w <= 0.0 or w > 700.0
 	if nico_box != null:
 		nico_box.offset_left = 14.0 * k
 		nico_box.offset_right = 14.0 * k
@@ -457,15 +467,13 @@ func _hide_loader() -> void:
 		# Il messaggio deve andare alla pagina padre, non all'iframe stessa.
 		JavaScriptBridge.eval("window.parent.postMessage({type:'wonderland:ready'}, window.location.origin)")
 
-## La pagina può chiedere il ritorno al villaggio con un messaggio.
-func _setup_js_back() -> void:
+## La pagina imposta un flag sul window dell'iframe: lo leggiamo a ogni frame.
+func _check_js_back() -> void:
 	if not OS.has_feature("web"):
 		return
-	var cb := JavaScriptBridge.create_callback(_on_js_back)
-	JavaScriptBridge.eval("window.addEventListener('message', function(e){ if(e.origin===window.location.origin && e.data && e.data.type==='wonderland:back'){ %s(e.data); } });" % cb)
-
-func _on_js_back(_args: Array) -> void:
-	_back_to_village()
+	if bool(JavaScriptBridge.eval("window.__wonderlandBack === true")):
+		JavaScriptBridge.eval("window.__wonderlandBack = false")
+		_back_to_village()
 
 func _post_view(view_name: String) -> void:
 	if OS.has_feature("web"):
@@ -1056,6 +1064,7 @@ func _zone_under(p: Vector2) -> String:
 	return best
 
 func _process(_d: float) -> void:
+	_check_js_back()
 	ui_check_t += _d
 	if ui_check_t >= 0.5:
 		ui_check_t = 0.0

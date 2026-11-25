@@ -25,6 +25,7 @@ function touchDistance(touches: TouchList): number {
 export function GodotVillage() {
   const router = useRouter();
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const requestBackRef = useRef<((value: boolean) => void) | null>(null);
   const [ready, setReady] = useState(false);
   const [inDistrict, setInDistrict] = useState(false);
 
@@ -58,6 +59,13 @@ export function GodotVillage() {
   useEffect(() => {
     const iframe = iframeRef.current;
     if (!iframe) return;
+
+    requestBackRef.current = (value: boolean) => {
+      const win = iframe.contentWindow as
+        | (Window & { __wonderlandBack?: boolean })
+        | null;
+      if (win) win.__wonderlandBack = value;
+    };
 
     let detach: (() => void) | null = null;
 
@@ -121,6 +129,7 @@ export function GodotVillage() {
     return () => {
       iframe.removeEventListener("load", attachZoom);
       detach?.();
+      requestBackRef.current = null;
     };
   }, []);
 
@@ -167,13 +176,8 @@ export function GodotVillage() {
       {inDistrict && ready && (
         <button
           type="button"
-          onClick={() =>
-            iframeRef.current?.contentWindow?.postMessage(
-              { type: "wonderland:back" },
-              window.location.origin
-            )
-          }
-          className="absolute left-3 top-3 z-30 inline-flex min-h-11 items-center gap-2 rounded-full border border-gold/40 bg-pine-950/90 px-4 text-sm font-semibold text-gold-light shadow-[0_8px_24px_rgba(0,0,0,0.45)] backdrop-blur-md transition-colors hover:border-gold hover:bg-gold/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
+          onClick={() => requestBackRef.current?.(true)}
+          className="absolute left-3 top-20 z-30 inline-flex min-h-11 items-center gap-2 rounded-full border border-gold/40 bg-pine-950/90 px-4 text-sm font-semibold text-gold-light shadow-[0_8px_24px_rgba(0,0,0,0.45)] backdrop-blur-md transition-colors hover:border-gold hover:bg-gold/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
         >
           <NavIcon name="arrowRight" className="h-4 w-4 rotate-180" />
           Torna al villaggio
