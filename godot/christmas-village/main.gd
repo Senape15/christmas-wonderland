@@ -72,6 +72,7 @@ var nico
 var nico_box: HBoxContainer
 var bubble: PanelContainer
 var nico_text: Label
+var nico_name_lbl: Label
 var nico_actions: HBoxContainer
 var nico_tw: Tween
 var bubble_gen := 0
@@ -83,6 +84,7 @@ var loader: CanvasLayer
 var loader_box: PanelContainer
 var loader_spin: Control
 var loader_t := 0.0
+var ui_check_t := 0.0
 
 func _ready() -> void:
 	var fx = FxScript.new()          # sopra al terreno, sotto agli oggetti
@@ -123,6 +125,7 @@ func _ready() -> void:
 	Api.request_failed.connect(func(m):
 		_hide_loader()
 		_show("Ops", m, 0))
+	_setup_js_back()
 	Api.fetch_village()
 	_maybe_screenshot()
 
@@ -329,21 +332,59 @@ func _make_theme() -> Theme:
 	th.set_color("font_color", "Button", Color.WHITE)
 	th.set_color("font_hover_color", "Button", Color.WHITE)
 	th.set_color("font_pressed_color", "Button", Color.WHITE)
-	th.set_font_size("font_size", "Button", int(round(18 * ui_k)))
-	th.set_font_size("font_size", "Label", int(round(18 * ui_k)))
+	th.set_font_size("font_size", "Button", 18)
+	th.set_font_size("font_size", "Label", 18)
 	return th
 
 ## Su un telefono verticale il viewport 1280x720 viene scalato a ~0.34:
 ## i controlli in pixel sarebbero minuscoli. Questo fattore li riporta a
 ## dimensioni leggibili senza toccare la scala della mappa.
 func ui_scale() -> float:
-	var v: Vector2 = get_viewport().size
+	var v := Vector2(1280, 720)
+	if OS.has_feature("web"):
+		# get_viewport().size resta 1280x720 con stretch "canvas_items":
+		# nel browser dobbiamo legere le dimensioni reali della canvas.
+		var w := float(JavaScriptBridge.eval("window.innerWidth"))
+		var h := float(JavaScriptBridge.eval("window.innerHeight"))
+		if w > 0.0 and h > 0.0:
+			v = Vector2(w, h)
+	else:
+		v = get_viewport().size
 	if v.x <= 0.0 or v.y <= 0.0:
 		return 1.0
 	var s := minf(v.x / 1280.0, v.y / 720.0)
 	if s <= 0.0:
 		return 1.0
-	return clampf(1.0 / s, 1.0, 2.8)
+	return clampf(1.0 / s, 1.0, 3.2)
+
+## I Container di Godot azzerano lo scale dei figli: ingrandiamo Nico
+## direttamente nel disegno e i font del dialogo, senza scalare i contenitori.
+func _apply_ui_scale() -> void:
+	var k := ui_scale()
+	if absf(k - ui_k) < 0.01:
+		return
+	ui_k = k
+	if nico != null:
+		nico.render_scale = k
+		nico.custom_minimum_size = Vector2(128 * k, 172 * k)
+		nico.queue_redraw()
+	if nico_name_lbl != null:
+		nico_name_lbl.add_theme_font_size_override("font_size", int(round(15 * k)))
+	if nico_text != null:
+		nico_text.add_theme_font_size_override("font_size", int(round(19 * k)))
+		nico_text.custom_minimum_size = Vector2(240 * k, 0)
+	if nico_actions != null:
+		nico_actions.add_theme_constant_override("separation", int(round(8 * k)))
+	if header_title != null:
+		header_title.add_theme_font_size_override("font_size", int(round(18 * k)))
+	if header_sub != null:
+		header_sub.add_theme_font_size_override("font_size", int(round(14 * k)))
+	if nico_box != null:
+		nico_box.offset_left = 14.0 * k
+		nico_box.offset_right = 14.0 * k
+		nico_box.offset_top = -14.0 * k
+		nico_box.offset_bottom = -14.0 * k
+		nico_box.add_theme_constant_override("separation", int(round(6 * k)))
 
 ## Copre il villaggio finché i dati non arrivano: niente paesaggio vuoto.
 func _build_loader() -> void:
@@ -416,6 +457,20 @@ func _hide_loader() -> void:
 		# Il messaggio deve andare alla pagina padre, non all'iframe stessa.
 		JavaScriptBridge.eval("window.parent.postMessage({type:'wonderland:ready'}, window.location.origin)")
 
+## La pagina può chiedere il ritorno al villaggio con un messaggio.
+func _setup_js_back() -> void:
+	if not OS.has_feature("web"):
+		return
+	var cb := JavaScriptBridge.create_callback(_on_js_back)
+	JavaScriptBridge.eval("window.addEventListener('message', function(e){ if(e.origin===window.location.origin && e.data && e.data.type==='wonderland:back'){ %s(e.data); } });" % cb)
+
+func _on_js_back(_args: Array) -> void:
+	_back_to_village()
+
+func _post_view(view_name: String) -> void:
+	if OS.has_feature("web"):
+		JavaScriptBridge.eval("window.parent.postMessage({type:'wonderland:view',view:'%s'}, window.location.origin)" % view_name)
+
 func _build_ui() -> void:
 	ui_k = ui_scale()
 	ui_theme = _make_theme()
@@ -445,7 +500,7 @@ func _build_ui() -> void:
 
 	# finestra "Apri la sorpresa"
 	popup = PanelContainer.new()
-	popup.custom_minimum_size = Vector2(420 * ui_k, 0)
+	popup.custom_minimum_size = Vector2(420, 0)
 	popup.visible = false
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = Color("0f3b25")
@@ -459,11 +514,11 @@ func _build_ui() -> void:
 	box.add_theme_constant_override("separation", 12)
 	popup.add_child(box)
 	popup_title = Label.new()
-	popup_title.add_theme_font_size_override("font_size", int(round(28 * ui_k)))
+	popup_title.add_theme_font_size_override("font_size", 28)
 	popup_title.add_theme_color_override("font_color", Color("ffd966"))
 	popup_body = Label.new()
 	popup_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	popup_body.custom_minimum_size = Vector2(376 * ui_k, 0)
+	popup_body.custom_minimum_size = Vector2(376, 0)
 	popup_body.add_theme_color_override("font_color", Color("f1f7f2"))
 	popup_btn = Button.new()
 	popup_btn.text = "Apri la sorpresa"
@@ -500,10 +555,10 @@ func _build_ui() -> void:
 	back_btn.visible = false
 	header_title = Label.new()
 	header_title.text = "Villaggio di Natale"
-	header_title.add_theme_font_size_override("font_size", int(round(24 * ui_k)))
+	header_title.add_theme_font_size_override("font_size", int(round(18 * ui_k)))
 	header_title.add_theme_color_override("font_color", Color("ffd966"))
 	header_sub = Label.new()
-	header_sub.add_theme_font_size_override("font_size", int(round(16 * ui_k)))
+	header_sub.add_theme_font_size_override("font_size", int(round(14 * ui_k)))
 	header_sub.add_theme_color_override("font_color", Color("b8d6c4"))
 	header_sub.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	hb.add_child(back_btn)
@@ -527,8 +582,9 @@ func _build_ui() -> void:
 	root.add_child(nico_box)
 	nico = NicoScript.new()
 	nico.tapped.connect(_on_nico_tapped)
-	# Ritratto grande e leggibile anche su telefono.
-	nico.scale = Vector2(ui_k, ui_k)
+	# Il ritratto si ingrandisce nel disegno (i Container azzerano lo scale).
+	nico.render_scale = ui_k
+	nico.custom_minimum_size = Vector2(128 * ui_k, 172 * ui_k)
 	nico_box.add_child(nico)
 	bubble = PanelContainer.new()
 	bubble.size_flags_vertical = Control.SIZE_SHRINK_CENTER
@@ -542,23 +598,24 @@ func _build_ui() -> void:
 	bs.shadow_color = Color(0, 0, 0, 0.35)
 	bs.shadow_size = 8
 	bubble.add_theme_stylebox_override("panel", bs)
-	bubble.scale = Vector2(ui_k, ui_k)
 	nico_box.add_child(bubble)
 	var bb := VBoxContainer.new()
 	bb.add_theme_constant_override("separation", 8)
 	bubble.add_child(bb)
-	var nm := Label.new()
-	nm.text = "Nico, l'elfo guida"
-	nm.add_theme_font_size_override("font_size", int(round(15 * ui_k)))
-	nm.add_theme_color_override("font_color", Color("c0392b"))
+	nico_name_lbl = Label.new()
+	nico_name_lbl.text = "Nico, l'elfo guida"
+	nico_name_lbl.add_theme_font_size_override("font_size", int(round(15 * ui_k)))
+	nico_name_lbl.add_theme_color_override("font_color", Color("c0392b"))
 	nico_text = Label.new()
 	nico_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	nico_text.custom_minimum_size = Vector2(340 * ui_k, 0)
+	# La nuvoletta viene già scalata come contenitore: non scalare anche
+	# i font qui, altrimenti il testo raddoppia e finisce fuori schermo.
+	nico_text.custom_minimum_size = Vector2(240 * ui_k, 0)
 	nico_text.add_theme_font_size_override("font_size", int(round(19 * ui_k)))
 	nico_text.add_theme_color_override("font_color", Color("3a2418"))
 	nico_actions = HBoxContainer.new()
 	nico_actions.add_theme_constant_override("separation", int(round(8 * ui_k)))
-	bb.add_child(nm)
+	bb.add_child(nico_name_lbl)
 	bb.add_child(nico_text)
 	bb.add_child(nico_actions)
 
@@ -729,6 +786,7 @@ func _focus_zone(slug: String, talk := true) -> void:
 	_tween_cam(iso(zg) + Vector2(0, -45), z, 0.85)
 	_set_focus_dim(slug)
 	_update_header()
+	_post_view("district")
 	if talk:
 		_nico_zone_talk(slug)
 
@@ -741,6 +799,7 @@ func _back_to_village() -> void:
 	_tween_cam(Vector2(0, 20), 0.85, 0.0)
 	_set_focus_dim("")
 	_update_header()
+	_post_view("village")
 	_nico_say("Eccoci di nuovo nel villaggio! Dove andiamo adesso?", [{"label": "Dove vado oggi?", "call": _nico_suggest}])
 
 func _update_header() -> void:
@@ -997,6 +1056,10 @@ func _zone_under(p: Vector2) -> String:
 	return best
 
 func _process(_d: float) -> void:
+	ui_check_t += _d
+	if ui_check_t >= 0.5:
+		ui_check_t = 0.0
+		_apply_ui_scale()
 	_process_loader(_d)
 	var mp := get_global_mouse_position()
 	var found := false

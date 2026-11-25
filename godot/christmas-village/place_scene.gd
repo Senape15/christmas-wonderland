@@ -33,13 +33,20 @@ var ui_k := 1.0
 
 ## Stessa logica di main.gd: su telefono i controlli in pixel vanno ingranditi.
 func ui_scale() -> float:
-	var v: Vector2 = get_viewport().size
+	var v := Vector2(1280, 720)
+	if OS.has_feature("web"):
+		var w := float(JavaScriptBridge.eval("window.innerWidth"))
+		var h := float(JavaScriptBridge.eval("window.innerHeight"))
+		if w > 0.0 and h > 0.0:
+			v = Vector2(w, h)
+	else:
+		v = get_viewport().size
 	if v.x <= 0.0 or v.y <= 0.0:
 		return 1.0
 	var s := minf(v.x / 1280.0, v.y / 720.0)
 	if s <= 0.0:
 		return 1.0
-	return clampf(1.0 / s, 1.0, 2.8)
+	return clampf(1.0 / s, 1.0, 3.2)
 
 func _ready() -> void:
 	ui_k = ui_scale()
@@ -62,7 +69,8 @@ func _ready() -> void:
 	add_child(shade)
 
 	nico = NicoScript.new()
-	nico.scale = Vector2(2.1 * ui_k, 2.1 * ui_k)
+	nico.render_scale = 2.1 * ui_k
+	nico.custom_minimum_size = Vector2(128 * 2.1 * ui_k, 172 * 2.1 * ui_k)
 	nico.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(nico)
 	npc = PortraitScript.new()
@@ -144,6 +152,14 @@ func _ready() -> void:
 	visible = false
 
 func _layout() -> void:
+	ui_k = ui_scale()
+	nico.render_scale = 2.1 * ui_k
+	nico.custom_minimum_size = Vector2(128 * 2.1 * ui_k, 172 * 2.1 * ui_k)
+	npc.scale = Vector2(ui_k, ui_k)
+	title_lbl.add_theme_font_size_override("font_size", int(round(34 * ui_k)))
+	name_lbl.add_theme_font_size_override("font_size", int(round(26 * ui_k)))
+	role_lbl.add_theme_font_size_override("font_size", int(round(16 * ui_k)))
+	text_lbl.add_theme_font_size_override("font_size", int(round(24 * ui_k)))
 	var s := size
 	var bh := 190.0 * ui_k
 	var by := s.y - bh - 28.0 * ui_k

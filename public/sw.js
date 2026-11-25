@@ -11,7 +11,7 @@
  * cancella le cache con versione diversa in fase di activate.
  */
 
-const CACHE_VERSION = "cw-v2";
+const CACHE_VERSION = "cw-v3";
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 /** In sviluppo gli asset cambiano a ogni HMR: niente cache statica. */
 const IS_DEV = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(self.location.hostname);
@@ -35,6 +35,9 @@ function isPrivatePath(pathname) {
 function isStaticAsset(url) {
   return (
     url.pathname.startsWith("/_next/static/") ||
+    // Il villaggio Godot è pubblico e statico: la PWA lo tiene in cache,
+    // il sito lo rivalida a ogni visita (vedi next.config.ts).
+    url.pathname.startsWith("/village/") ||
     url.pathname.startsWith("/icons/") ||
     url.pathname.startsWith("/fonts/") ||
     url.pathname === "/manifest.webmanifest" ||

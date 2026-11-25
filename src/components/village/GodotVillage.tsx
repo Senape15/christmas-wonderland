@@ -16,7 +16,7 @@ function touchDistance(touches: TouchList): number {
  * Schermata iniziale dell'app: il villaggio Godot a tutto schermo.
  *
  * - lascia spazio alla dock inferiore, così Nico non resta nascosto;
- * - copre la vecchia etichetta minuscola del gioco con un'intestazione leggibile;
+ * - mostra un pulsante "Torna al villaggio" quando si entra in un quartiere;
  * - converte il pinch a due dita in eventi `wheel`, che è l'input di zoom
  *   supportato dal motore Godot (su mobile il pinch nativo non arriva);
  * - il gioco apre le caselle con `wonderland:open-day` e l'app porta al
@@ -26,13 +26,18 @@ export function GodotVillage() {
   const router = useRouter();
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [ready, setReady] = useState(false);
+  const [inDistrict, setInDistrict] = useState(false);
 
   useEffect(() => {
     function onMessage(e: MessageEvent) {
       if (e.origin !== window.location.origin) return;
-      const data = e.data as { type?: string; day?: unknown };
+      const data = e.data as { type?: string; day?: unknown; view?: unknown };
       if (data?.type === "wonderland:ready") {
         setReady(true);
+        return;
+      }
+      if (data?.type === "wonderland:view") {
+        setInDistrict(data.view === "district");
         return;
       }
       if (data?.type !== "wonderland:open-day") return;
@@ -157,21 +162,23 @@ export function GodotVillage() {
         </div>
       )}
 
-      {/* Copre l'etichetta minuscola disegnata dal gioco e la sostituisce. */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 top-0 z-20 h-16 bg-gradient-to-b from-pine-950 via-pine-950/85 to-transparent"
-      />
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-30 flex justify-center px-3 pt-[max(0.5rem,env(safe-area-inset-top,0px))]">
-        <div className="rounded-full border border-cream-300/20 bg-pine-950/85 px-4 py-1.5 text-center shadow-[0_8px_24px_rgba(0,0,0,0.45)] backdrop-blur-md">
-          <p className="text-xs font-bold text-cream-50">
-            Villaggio di Natale
-          </p>
-          <p className="text-[11px] leading-tight text-cream-300/75">
-            Tocca un punto per aprirlo · pizzica per zoomare
-          </p>
-        </div>
-      </div>
+      {/* Il villaggio ha la sua barra in alto: non copriamola. Aggiungiamo
+          solo un pulsante ben visibile per tornare indietro dal quartiere. */}
+      {inDistrict && ready && (
+        <button
+          type="button"
+          onClick={() =>
+            iframeRef.current?.contentWindow?.postMessage(
+              { type: "wonderland:back" },
+              window.location.origin
+            )
+          }
+          className="absolute left-3 top-3 z-30 inline-flex min-h-11 items-center gap-2 rounded-full border border-gold/40 bg-pine-950/90 px-4 text-sm font-semibold text-gold-light shadow-[0_8px_24px_rgba(0,0,0,0.45)] backdrop-blur-md transition-colors hover:border-gold hover:bg-gold/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
+        >
+          <NavIcon name="arrowRight" className="h-4 w-4 rotate-180" />
+          Torna al villaggio
+        </button>
+      )}
     </div>
   );
 }

@@ -37,9 +37,10 @@ describe("Service Worker", () => {
   });
 
   it("memorizza solo asset statici e versiona la cache", () => {
-    expect(sw).toContain('const CACHE_VERSION = "cw-v2"');
+    expect(sw).toContain('const CACHE_VERSION = "cw-v3"');
     expect(sw).toContain("STATIC_CACHE");
     expect(sw).toContain('url.pathname.startsWith("/_next/static/")');
+    expect(sw).toContain('url.pathname.startsWith("/village/")');
     expect(sw).not.toContain("supabase.co");
     // Nessun pattern generico per estensione: una futura immagine privata
     // servita da /api o da una route utente non deve finire in cache.

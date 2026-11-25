@@ -8,6 +8,9 @@ signal tapped
 var talking := false
 var happy := 0.0       # secondi di saluto rimasti
 var t := 0.0
+## Ingrandimento del disegno: i Container di Godot azzerano lo `scale` del
+## controllo figlio, quindi applichiamo la trasformata direttamente in _draw.
+var render_scale := 1.0
 
 func _init() -> void:
 	custom_minimum_size = Vector2(128, 172)
@@ -29,6 +32,7 @@ func _gui_input(e: InputEvent) -> void:
 		accept_event()
 
 func _draw() -> void:
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2(render_scale, render_scale))
 	var by := sin(t * 2.2) * 2.5
 	var skin := Color("f6cfa8")
 	var green := Color("2e8b57")

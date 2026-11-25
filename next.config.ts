@@ -1,8 +1,9 @@
 import type { NextConfig } from "next";
 
-// Non sono asset con hash nel nome: una settimana di cache più revalidate
-// evita di riscaricare 38 MB a ogni visita senza bloccare i futuri aggiornamenti.
-const VILLAGE_CACHE = "public, max-age=604800, stale-while-revalidate=604800";
+// Il PCK cambia a ogni export e non ha hash nel nome: una cache lunga
+// servirebbe la versione vecchia per giorni. Rivalidiamo sempre; la velocità
+// nell'app viene dal Service Worker, non da qui.
+const VILLAGE_CACHE = "public, max-age=0, must-revalidate";
 
 const nextConfig: NextConfig = {
   /* config options here */
