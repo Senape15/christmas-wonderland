@@ -5,8 +5,9 @@ import { cn } from "@/lib/utils";
  * Set di icone della shell dell'app.
  *
  * Sono SVG inline (nessuna dipendenza esterna) con tratto `currentColor`:
- * funzionano sia nei Server Component (MemoryShell) sia nei Client Component
- * (dock, menu, dashboard) e mantengono dimensioni/colore coerenti.
+ * funzionano sia nei Server Component (`PageShell`) sia nei Client Component
+ * (dock, calendario, ricordi, impostazioni) e mantengono dimensioni/colore
+ * coerenti.
  */
 export type NavIconName =
   | "tree"

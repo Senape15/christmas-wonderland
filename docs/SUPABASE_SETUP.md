@@ -166,11 +166,9 @@ select polname
    and polname like '%their own%';  -- deve tornare vuoto
 ```
 
-Dopo l'esecuzione fai logout/login: nei percorsi `/dashboard/diario`,
-`/dashboard/album`, `/dashboard/collezione`, `/dashboard/indizi`,
-`/dashboard/sfere`, `/dashboard/cronologia`, `/dashboard/galleria`,
-`/dashboard/statistiche` e `/dashboard/ricordo-24` la nota «migrazione
-necessaria» scompare e i ricordi vengono salvati.
+Dopo l'esecuzione fai logout/login: in `/dashboard/ricordi` e
+`/dashboard/ricordo-24` la nota «migrazione necessaria» scompare e i ricordi
+vengono salvati.
 
 ### 2.5 Fase 7 – PWA e Web Push (migrazione 007)
 

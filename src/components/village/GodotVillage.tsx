@@ -1,11 +1,14 @@
 "use client";
 
 import { useEffect } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { NavIcon } from "@/components/layout/nav-icons";
 
-/** Incorpora il villaggio Godot e apre l'esperienza del giorno richiesto. */
+/**
+ * Schermata iniziale dell'app: il villaggio Godot a tutto schermo.
+ *
+ * Il gioco apre la casella scelta inviando `wonderland:open-day` alla pagina:
+ * l'app porta al calendario con il giorno già pronto da aprire.
+ */
 export function GodotVillage() {
   const router = useRouter();
 
@@ -16,7 +19,7 @@ export function GodotVillage() {
       if (data?.type !== "wonderland:open-day") return;
       const day = Number(data.day);
       if (Number.isInteger(day) && day >= 1 && day <= 24) {
-        router.push(`/dashboard?giorno=${day}`);
+        router.push(`/dashboard/calendario?giorno=${day}`);
       }
     }
     window.addEventListener("message", onMessage);
@@ -24,21 +27,17 @@ export function GodotVillage() {
   }, [router]);
 
   return (
-    <div className="relative h-dvh w-full bg-pine-900">
+    <div className="relative h-dvh w-full overflow-hidden bg-pine-900">
       <iframe
         src="/village/index.html"
         title="Villaggio di Natale"
         className="h-full w-full border-0"
         allow="fullscreen"
       />
-      <Link
-        href="/dashboard"
-        aria-label="Torna alla dashboard"
-        className="absolute left-3 top-3 z-10 inline-flex min-h-10 items-center gap-2 rounded-full border border-cream-300/25 bg-pine-950/85 px-3 text-xs font-semibold text-cream-100 backdrop-blur-md transition-colors hover:border-gold hover:text-gold-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
-      >
-        <NavIcon name="chevronRight" className="h-4 w-4 rotate-180" />
-        Dashboard
-      </Link>
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-28 bg-gradient-to-t from-pine-950/70 to-transparent"
+      />
     </div>
   );
 }

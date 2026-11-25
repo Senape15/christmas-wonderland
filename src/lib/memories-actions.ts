@@ -32,11 +32,8 @@ export async function openMemorySphereAction(input: {
     const user = await requireUser();
     const result = await openMemorySphere(user, parsed.data.sphereId);
     if (result.ok) {
-      revalidatePath("/dashboard/sfere");
-      revalidatePath("/dashboard/album");
-      revalidatePath("/dashboard/collezione");
-      revalidatePath("/dashboard/diario");
-      revalidatePath("/dashboard/statistiche");
+      revalidatePath("/dashboard/ricordi");
+      revalidatePath("/dashboard/ricordo-24");
       revalidatePath("/dashboard");
     }
     return result;

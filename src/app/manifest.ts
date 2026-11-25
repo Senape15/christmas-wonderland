@@ -43,11 +43,16 @@ export default function manifest(): MetadataRoute.Manifest {
       },
     ],
     shortcuts: [
-      { name: "Calendario", short_name: "Calendario", url: "/dashboard" },
-      { name: "Album dei ricordi", short_name: "Album", url: "/dashboard/album" },
+      { name: "Villaggio", short_name: "Villaggio", url: "/dashboard" },
       {
-        name: "Impostazioni notifiche",
-        short_name: "Notifiche",
+        name: "Calendario dell'Avvento",
+        short_name: "Calendario",
+        url: "/dashboard/calendario",
+      },
+      { name: "Ricordi", short_name: "Ricordi", url: "/dashboard/ricordi" },
+      {
+        name: "Impostazioni",
+        short_name: "Impostazioni",
         url: "/dashboard/impostazioni",
       },
     ],

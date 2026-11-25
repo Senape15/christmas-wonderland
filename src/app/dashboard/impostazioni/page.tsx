@@ -1,27 +1,46 @@
+import { Suspense } from "react";
 import { requireUser } from "@/lib/auth";
 import { getNotificationOverview } from "@/lib/services/notifications";
 import { publicVapidKey } from "@/lib/push/config";
-import { MemoryShell } from "@/components/memories/MemoryShell";
-import { NotificationSettings } from "@/components/pwa/NotificationSettings";
-
-export const instant = false;
+import { PageShell } from "@/components/layout/page-shell";
+import { SettingsView } from "@/components/settings/SettingsView";
 
 export const metadata = {
-  title: "Impostazioni notifiche · Christmas Wonderland",
+  title: "Impostazioni · Christmas Wonderland",
 };
 
-export default async function NotificationSettingsPage() {
+async function SettingsData() {
   const user = await requireUser();
   const overview = await getNotificationOverview(user.id);
 
   return (
-    <MemoryShell
+    <PageShell
       user={user}
-      active="/dashboard/impostazioni"
-      title="Impostazioni notifiche"
-      subtitle="Scegli cosa ricevere, a che ora e su quali dispositivi. Le notifiche arrivano solo per i giorni già sbloccati."
+      eyebrow="Impostazioni"
+      title="Account e notifiche"
+      subtitle="Gestisci il tuo account, i promemoria e i dispositivi che ricevono le notifiche. Le notifiche arrivano solo per i giorni già sbloccati."
     >
-      <NotificationSettings overview={overview} vapidPublicKey={publicVapidKey()} />
-    </MemoryShell>
+      <SettingsView
+        user={user}
+        overview={overview}
+        vapidPublicKey={publicVapidKey()}
+      />
+    </PageShell>
+  );
+}
+
+export default function SettingsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-pine-950 text-cream-100">
+          <p className="text-sm text-cream-300/70">
+            Sto caricando le impostazioni…
+          </p>
+        </div>
+      }
+    >
+      <SettingsData />
+    </Suspense>
   );
 }

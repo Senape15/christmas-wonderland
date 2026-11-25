@@ -41,24 +41,24 @@ Timezone di riferimento: **Europe/Rome**.
 
 ## Ricordi e collezioni (Fase 6)
 
+Tutto converge in un'unica sezione, `/dashboard/ricordi`, con tre schede:
+**Giornate** (1–24, con eventi, oggetti, quiz e indizi di ogni tappa),
+**Ricordi** (lettere, foto, messaggi e contenuti scoperti) e **Sfere**
+(le palle di neve della memoria). Un solo snapshot server (`getMemoriesHubData`)
+alimenta le tre viste, così la sezione resta leggera.
+
 - **Diario personale**: eventi derivati dai progressi reali e salvati lato server
   con chiave evento univoca `(user_id, event_key)`: nessun duplicato al refresh.
-  Filtri per categoria e giorno.
 - **Album dei ricordi**: lettere, foto, oggetti, indizi, quiz risolti, regali,
   messaggi, sfere e ricordi configurati dall'admin, con navigazione tra i
   contenuti e data di scoperta.
-- **Collezione**: oggetti da regali e contenuti, simboli da `gift_symbols`,
-  sfere da `memory_spheres`. Le sagome misteriose appaiono solo se l'admin le
-  ha abilitate e mai per contenuti futuri.
 - **Sfere della memoria**: sblocco automatico lato server a condizioni
-  soddisfatte, apertura registrata una sola volta, inserimento nell'album.
-- **Indizi**: leggibili dopo la scoperta, con collegamenti solo verso altri
-  indizi già scoperti. Nessuna anticipazione della rivelazione.
-- **Cronologia 1–24**, **galleria con URL firmate per le foto personali**,
-  **statistiche server-side** e **riepilogo del 24 dicembre** collegato al
-  regalo fisico (pupazzo), protetto dai gate della Fase 5.
-- Le pagine funzionano anche prima della migrazione 006: mostrano i dati delle
-  fasi precedenti e una spiegazione invece di errori.
+  soddisfatte, apertura registrata una sola volta. Le sagome misteriose appaiono
+  solo se l'admin le ha abilitate e mai per contenuti futuri.
+- **Riepilogo del 24 dicembre** in `/dashboard/ricordo-24`, collegato al regalo
+  fisico (pupazzo) e protetto dai gate della Fase 5.
+- La sezione funziona anche prima della migrazione 006: mostra i dati delle fasi
+  precedenti e una spiegazione invece di errori.
 
 ## PWA e notifiche (Fase 7)
 
@@ -80,8 +80,9 @@ Timezone di riferimento: **Europe/Rome**.
   +4 ore se la casella non è aperta. Solo giorni sbloccati, fuso
   `Europe/Rome`, preferenze e ore di silenzio rispettate, nessuna anticipazione
   del finale.
-- **Preferenze**: `/dashboard/impostazioni` con tipologie, orario preferito,
-  silenzio, gestione dispositivi e disattivazione completa.
+- **Preferenze**: `/dashboard/impostazioni` riunisce Account e Notifiche; nella
+  scheda Notifiche: tipologie, orario preferito, silenzio, gestione dispositivi e
+  disattivazione completa.
 - **Admin**: `/admin/notifications` con console operativa (stato VAPID,
   dispositivi, ciclo manuale, notifica di prova solo all'admin, stato ed errori
   degli invii) e CRUD delle notifiche programmate.
@@ -143,15 +144,14 @@ delle PWA) e [docs/](./docs/) per i dettagli.
 src/
   app/              Route App Router (login, register, dashboard, admin, api)
   components/
-    village/        Mappa SVG navigabile, 6 zone illustrate, 24 hotspot, schede
+    village/        Villaggio Godot a tutto schermo (schermata iniziale)
     experience/     Modale del giorno, password, quiz, scatola finale
-    dashboard/      Storia, Nico, mappa, calendario e progressi
-    memories/       Libro dei ricordi: diario, album, collezione, indizi,
-                    cronologia, galleria, statistiche, finale
+    settings/       Account e notifiche
+    memories/       Hub unico: giornate, album, sfere e finale
     pwa/            Service Worker, prompt di installazione, banner offline,
                     impostazioni notifiche
     admin/          Pannello amministrativo completo (16 sezioni)
-    calendar/       Griglia dell'Avvento a 4 stati
+    calendar/       Griglia dell'Avvento a 4 stati e apertura della sorpresa
     nico/           Mascotte con 4 espressioni
     animations/     Neve e luci (CSS puro, server-safe)
   lib/
@@ -241,7 +241,7 @@ docs/               Documentazione tecnica
 ## Test
 
 ```bash
-npm test          # Vitest: 290 test (utils, calendario, villaggio, admin, Fase 5, Fase 6, Fase 7, Fase 8)
+npm test          # Vitest: 272 test (utils, calendario, villaggio, admin, Fase 5, Fase 6, Fase 7, Fase 8)
 npm run lint
 npm run typecheck
 npm run build

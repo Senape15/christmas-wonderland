@@ -43,14 +43,6 @@ export interface DiaryEventView {
   sourceId: string | null;
 }
 
-export interface DiaryData {
-  events: DiaryEventView[];
-  categories: FilterOption[];
-  days: FilterOption[];
-  /** false finché la migration 006 non è applicata. */
-  phase6Ready: boolean;
-}
-
 export type AlbumKind =
   | "letter"
   | "note"
@@ -170,12 +162,6 @@ export interface ClueItem {
   related: ClueLink[];
 }
 
-export interface CluesData {
-  clues: ClueItem[];
-  groups: FilterOption[];
-  phase6Ready: boolean;
-}
-
 export interface TimelineDay {
   dayNumber: number;
   state: DayState;
@@ -193,58 +179,6 @@ export interface TimelineDay {
 
 export interface TimelineData {
   days: TimelineDay[];
-  phase6Ready: boolean;
-}
-
-export interface GalleryImage {
-  id: string;
-  src: string;
-  alt: string;
-  dayNumber: number | null;
-  category: string;
-  sourceType: string;
-  sourceId: string | null;
-  acquiredAtLabel: string | null;
-}
-
-export interface GalleryData {
-  images: GalleryImage[];
-  categories: FilterOption[];
-  days: FilterOption[];
-  phase6Ready: boolean;
-}
-
-export interface StatisticsCategory {
-  key: string;
-  label: string;
-  found: number;
-  total: number;
-  percent: number;
-}
-
-export interface MemoryStatistics {
-  daysOpened: number;
-  daysCompleted: number;
-  totalDays: number;
-  memories: number;
-  objects: number;
-  objectsTotal: number;
-  symbols: number;
-  symbolsTotal: number;
-  spheres: number;
-  spheresTotal: number;
-  clues: number;
-  cluesTotal: number;
-  quizzesCompleted: number;
-  quizzesTotal: number;
-  finaleCompleted: boolean;
-  finaleAvailable: boolean;
-  overallPercent: number;
-  categories: StatisticsCategory[];
-}
-
-export interface StatisticsData {
-  stats: MemoryStatistics;
   phase6Ready: boolean;
 }
 

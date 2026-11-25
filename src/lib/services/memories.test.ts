@@ -142,7 +142,6 @@ describe("privacy tra utenti nella Fase 6", () => {
       "final_box_completions",
       "memory_spheres",
       "secret_messages",
-      "user_photos",
       "diary_events",
     ];
 

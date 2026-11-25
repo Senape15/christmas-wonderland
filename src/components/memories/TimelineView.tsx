@@ -81,7 +81,7 @@ export function TimelineView({ data }: { data: TimelineData }) {
                   )}
                   {day.isOpened && (
                     <Link
-                      href={`/dashboard?giorno=${day.dayNumber}`}
+                      href={`/dashboard/calendario?giorno=${day.dayNumber}`}
                       className="mt-3 inline-block rounded-full border border-gold/50 px-3 py-1 text-[11px] font-semibold text-gold-light hover:bg-gold hover:text-pine-950"
                     >
                       Rivivi il giorno →

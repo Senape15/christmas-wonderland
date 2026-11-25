@@ -6,14 +6,9 @@ import type { CurrentUser } from "@/lib/auth";
 import type { ExperienceDay, UserProgress } from "@/types/experience";
 import type {
   AlbumData,
-  CluesData,
   CollectionData,
-  DiaryData,
   DiaryEventView,
   FinaleData,
-  GalleryData,
-  GalleryImage,
-  MemoryStatistics,
   SphereOpenResult,
   TimelineData,
 } from "@/types/memories";
@@ -29,9 +24,7 @@ import {
 import { formatRomeDateTime, excerpt } from "@/lib/memories/format";
 import {
   buildDiaryEvents,
-  buildDiaryFilterOptions,
   type DiaryContentFacts,
-  type DiaryEventDraft,
   type DiaryFacts,
 } from "@/lib/memories/diary";
 import {
@@ -47,15 +40,12 @@ import {
   type CollectionFacts,
 } from "@/lib/memories/collection";
 import {
-  buildClueGroupOptions,
   buildClueItems,
   buildDiscoveredClueTitles,
   type ClueContentFacts,
   type ClueFacts,
 } from "@/lib/memories/clues";
 import { buildTimelineDays } from "@/lib/memories/timeline";
-import { buildMemoryStatistics } from "@/lib/memories/stats";
-import { buildGalleryData } from "@/lib/memories/gallery";
 import {
   buildFinaleJourney,
   resolveFinaleGate,
@@ -63,10 +53,6 @@ import {
 
 type AnyRow = Record<string, unknown>;
 type ServerClient = Awaited<ReturnType<typeof createClient>>;
-type AdminClient = Awaited<ReturnType<typeof createAdminClient>>;
-
-const MEDIA_BUCKET = "wonderland-media";
-const SIGNED_URL_SECONDS = 60 * 60;
 
 function asRow(value: unknown): AnyRow {
   return (value ?? {}) as AnyRow;
@@ -222,7 +208,6 @@ export interface MemorySnapshot {
   correctQuizAt: Map<string, string>;
   passwordCompletedAt: Map<string, string>;
   diaryRows: AnyRow[];
-  userPhotos: AnyRow[];
   /** Viste del diario già sincronizzate in questa richiesta. */
   diaryViews: DiaryEventView[];
   diarySynced: boolean;
@@ -375,7 +360,6 @@ export async function loadMemorySnapshot(
     secretResult,
     passwordsResult,
     finalBoxResult,
-    userPhotosResult,
     diaryResult,
     entriesResult,
   ] = await Promise.all([
@@ -388,7 +372,6 @@ export async function loadMemorySnapshot(
     client.from("secret_messages").select("*").eq("user_id", user.id),
     admin.from("physical_passwords").select("content_id, is_active").eq("is_active", true),
     admin.from("final_gift_boxes").select("*").eq("is_active", true).order("reveal_day", { ascending: false }).limit(1).maybeSingle(),
-    client.from("user_photos").select("*").eq("user_id", user.id),
     capabilities.diaryEvents
       ? client.from("diary_events").select("*").eq("user_id", user.id)
       : Promise.resolve({ data: [], error: null }),
@@ -659,7 +642,6 @@ export async function loadMemorySnapshot(
     correctQuizAt,
     passwordCompletedAt,
     diaryRows: (diaryResult.data ?? []).map(asRow),
-    userPhotos: (userPhotosResult.data ?? []).map(asRow),
     diaryViews: [],
     diarySynced: false,
   };
@@ -850,32 +832,7 @@ async function syncDiaryEvents(
   return views;
 }
 
-export async function getDiaryData(user: CurrentUser): Promise<DiaryData> {
-  const snapshot = await loadMemorySnapshot(user);
-  const events = snapshot.diaryViews;
-  const drafts: DiaryEventDraft[] = events.map((event) => ({
-    eventKey: event.eventKey,
-    category: event.category,
-    title: event.title,
-    description: event.description,
-    dayNumber: event.dayNumber,
-    imageUrl: event.imageUrl,
-    sourceType: event.sourceType,
-    sourceId: event.sourceId,
-    occurredAt: event.occurredAt,
-  }));
-  const filters = buildDiaryFilterOptions(drafts);
-
-  return {
-    events,
-    categories: filters.categories,
-    days: filters.days,
-    phase6Ready: snapshot.capabilities.ready,
-  };
-}
-
-export async function getAlbumData(user: CurrentUser): Promise<AlbumData> {
-  const snapshot = await loadMemorySnapshot(user);
+function buildAlbumData(snapshot: MemorySnapshot): AlbumData {
   const entries = buildAlbumEntries(albumFacts(snapshot));
   const filters = buildAlbumFilterOptions(entries);
 
@@ -887,10 +844,7 @@ export async function getAlbumData(user: CurrentUser): Promise<AlbumData> {
   };
 }
 
-export async function getCollectionData(
-  user: CurrentUser
-): Promise<CollectionData> {
-  const snapshot = await loadMemorySnapshot(user);
+function buildCollectionData(snapshot: MemorySnapshot): CollectionData {
   const facts = collectionFacts(snapshot);
   const objects = buildObjectItems(facts);
   const symbols = buildSymbolItems(facts);
@@ -912,19 +866,7 @@ export async function getCollectionData(
   };
 }
 
-export async function getCluesData(user: CurrentUser): Promise<CluesData> {
-  const snapshot = await loadMemorySnapshot(user);
-  const clues = buildClueItems(clueFacts(snapshot));
-
-  return {
-    clues,
-    groups: buildClueGroupOptions(clues),
-    phase6Ready: snapshot.capabilities.ready,
-  };
-}
-
-export async function getTimelineData(user: CurrentUser): Promise<TimelineData> {
-  const snapshot = await loadMemorySnapshot(user);
+function buildTimelineData(snapshot: MemorySnapshot): TimelineData {
   const events = snapshot.diaryViews;
   const objects = buildObjectItems(collectionFacts(snapshot));
   const clues = buildClueItems(clueFacts(snapshot));
@@ -967,181 +909,24 @@ export async function getTimelineData(user: CurrentUser): Promise<TimelineData> 
   };
 }
 
-async function resolvePhotoUrls(
-  admin: AdminClient,
-  photos: readonly AnyRow[],
-  unlockedDays: ReadonlySet<number>
-): Promise<{ row: AnyRow; url: string }[]> {
-  const resolved: { row: AnyRow; url: string }[] = [];
-  for (const row of photos) {
-    const dayNumber = n(row.day_number);
-    if (!unlockedDays.has(dayNumber)) continue;
-
-    const path = s(row.storage_path);
-    if (!path) continue;
-    if (/^https?:\/\//i.test(path)) {
-      resolved.push({ row, url: path });
-      continue;
-    }
-
-    // URL firmata di breve durata: mai un URL pubblico permanente.
-    const { data, error } = await admin.storage
-      .from(MEDIA_BUCKET)
-      .createSignedUrl(path, SIGNED_URL_SECONDS);
-    if (!error && data?.signedUrl) resolved.push({ row, url: data.signedUrl });
-  }
-  return resolved;
+export interface MemoriesHubData {
+  timeline: TimelineData;
+  album: AlbumData;
+  collection: CollectionData;
 }
 
-export async function getGalleryData(user: CurrentUser): Promise<GalleryData> {
-  const snapshot = await loadMemorySnapshot(user);
-  const unlockedDays = new Set(
-    snapshot.days.filter((day) => day.isUnlocked).map((day) => day.dayNumber)
-  );
-  const admin = await createAdminClient();
-  const photoUrls = await resolvePhotoUrls(admin, snapshot.userPhotos, unlockedDays);
-
-  const images: GalleryImage[] = [];
-
-  for (const content of snapshot.contents.filter((item) => item.accessible)) {
-    if (!content.image_url) continue;
-    images.push({
-      id: `content:${content.id}`,
-      src: content.image_url,
-      alt: content.title,
-      dayNumber: content.day_number,
-      category: content.kind === "photo" ? "Fotografie" : "Contenuti",
-      sourceType: "content",
-      sourceId: content.id,
-      acquiredAtLabel: formatRomeDateTime(
-        snapshot.openedAtByDay.get(content.day_number)
-      ),
-    });
-  }
-
-  for (const gift of snapshot.gifts) {
-    if (!gift.image_url || !unlockedDays.has(gift.day_number)) continue;
-    images.push({
-      id: `gift:${gift.id}`,
-      src: gift.image_url,
-      alt: gift.name,
-      dayNumber: gift.day_number,
-      category: "Regali",
-      sourceType: "gift",
-      sourceId: gift.id,
-      acquiredAtLabel: formatRomeDateTime(
-        snapshot.openedAtByDay.get(gift.day_number)
-      ),
-    });
-  }
-
-  for (const message of snapshot.messages) {
-    if (!message.image_url) continue;
-    images.push({
-      id: `message:${message.id}`,
-      src: message.image_url,
-      alt: message.title,
-      dayNumber: message.day_number,
-      category: "Messaggi",
-      sourceType: "day",
-      sourceId: message.id,
-      acquiredAtLabel: formatRomeDateTime(
-        snapshot.openedAtByDay.get(message.day_number)
-      ),
-    });
-  }
-
-  for (const entry of snapshot.memoryEntries) {
-    if (!entry.image_url) continue;
-    images.push({
-      id: `memory:${entry.id}`,
-      src: entry.image_url,
-      alt: entry.title,
-      dayNumber: entry.day_number,
-      category: "Ricordi",
-      sourceType: "memory",
-      sourceId: entry.id,
-      acquiredAtLabel:
-        entry.day_number !== null &&
-        snapshot.openedAtByDay.has(entry.day_number)
-          ? formatRomeDateTime(snapshot.openedAtByDay.get(entry.day_number))
-          : null,
-    });
-  }
-
-  for (const sphere of snapshot.spheres.filter((item) => item.is_unlocked)) {
-    if (!sphere.photo_url) continue;
-    if (sphere.day_number !== null && !unlockedDays.has(sphere.day_number)) continue;
-    images.push({
-      id: `sphere:${sphere.id}`,
-      src: sphere.photo_url,
-      alt: sphere.title,
-      dayNumber: sphere.day_number,
-      category: "Sfere",
-      sourceType: "sphere",
-      sourceId: sphere.id,
-      acquiredAtLabel: formatRomeDateTime(sphere.unlocked_at),
-    });
-  }
-
-  for (const photo of photoUrls) {
-    images.push({
-      id: `photo:${s(photo.row.id)}`,
-      src: photo.url,
-      alt: "Foto personale",
-      dayNumber: n(photo.row.day_number),
-      category: "Foto personali",
-      sourceType: "photo",
-      sourceId: s(photo.row.id),
-      acquiredAtLabel: formatRomeDateTime(s(photo.row.created_at)),
-    });
-  }
-
-  const gallery = buildGalleryData(images);
-  return {
-    images: gallery.images,
-    categories: gallery.categories,
-    days: gallery.days,
-    phase6Ready: snapshot.capabilities.ready,
-  };
-}
-
-export async function getStatisticsData(
+/**
+ * Un solo snapshot per l'intera sezione Ricordi: giornate, album e sfere.
+ * Evita di rileggere gli stessi dati tre volte in una sola visita.
+ */
+export async function getMemoriesHubData(
   user: CurrentUser
-): Promise<{ stats: MemoryStatistics; phase6Ready: boolean }> {
+): Promise<MemoriesHubData> {
   const snapshot = await loadMemorySnapshot(user);
-  const objects = buildObjectItems(collectionFacts(snapshot));
-  const symbols = buildSymbolItems(collectionFacts(snapshot));
-  const spheres = buildSphereItems(collectionFacts(snapshot));
-  const clues = buildClueItems(clueFacts(snapshot));
-  const album = buildAlbumEntries(albumFacts(snapshot));
-  const day24 = snapshot.days.find((day) => day.dayNumber === 24);
-  const gate = resolveFinaleGate({
-    revealDay: snapshot.finalBox?.reveal_day ?? 24,
-    dayUnlocked: Boolean(day24?.isUnlocked),
-    completed: Boolean(snapshot.finalBoxCompletedAt),
-  });
-
   return {
-    stats: buildMemoryStatistics({
-      daysOpened: snapshot.progress.daysOpened,
-      daysCompleted: snapshot.progress.daysCompleted,
-      totalDays: snapshot.progress.totalDays,
-      memories: album.length,
-      objects: objects.found,
-      objectsTotal: objects.total,
-      symbols: symbols.found,
-      symbolsTotal: symbols.total,
-      spheres: spheres.found,
-      spheresTotal: spheres.total,
-      clues: clues.length,
-      cluesTotal: snapshot.progress.cluesTotal,
-      quizzesCompleted: snapshot.progress.quizzesCompleted,
-      quizzesTotal: snapshot.progress.quizzesTotal,
-      finaleCompleted: gate.completed,
-      finaleAvailable: gate.available,
-    }),
-    phase6Ready: snapshot.capabilities.ready,
+    timeline: buildTimelineData(snapshot),
+    album: buildAlbumData(snapshot),
+    collection: buildCollectionData(snapshot),
   };
 }
 

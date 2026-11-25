@@ -38,9 +38,11 @@ describe("manifest PWA", () => {
     );
   });
 
-  it("offre scorciatoie verso calendario e impostazioni notifiche", () => {
+  it("offre scorciatoie verso villaggio, calendario, ricordi e impostazioni", () => {
     const urls = (value.shortcuts ?? []).map((shortcut) => shortcut.url);
     expect(urls).toContain("/dashboard");
+    expect(urls).toContain("/dashboard/calendario");
+    expect(urls).toContain("/dashboard/ricordi");
     expect(urls).toContain("/dashboard/impostazioni");
   });
 });

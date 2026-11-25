@@ -107,6 +107,7 @@ export async function saveFinalBox(values: unknown): Promise<ActionResult> {
     revalidatePath("/admin/final-box");
     revalidatePath("/admin");
     revalidatePath("/dashboard/ricordo-24");
+    revalidatePath("/dashboard/ricordi");
     revalidatePath("/dashboard");
     return { ok: true, error: null };
   } catch (error) {

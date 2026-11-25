@@ -3,7 +3,7 @@ import { requireUser } from "@/lib/auth";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 import { OfflineBanner } from "@/components/pwa/OfflineBanner";
 import { ServiceWorkerRegistrar } from "@/components/pwa/ServiceWorkerRegistrar";
-import { AppNavigationProvider } from "@/components/layout/app-navigation";
+import { AppDock } from "@/components/layout/app-navigation";
 
 /**
  * Authenticated shell for /dashboard.
@@ -11,14 +11,15 @@ import { AppNavigationProvider } from "@/components/layout/app-navigation";
  * while the real guard is requireUser().
  */
 async function AuthGate({ children }: { children: React.ReactNode }) {
-  const user = await requireUser();
+  await requireUser();
   return (
-    <AppNavigationProvider user={user}>
+    <>
       <ServiceWorkerRegistrar />
       <OfflineBanner />
       {children}
+      <AppDock />
       <InstallPrompt />
-    </AppNavigationProvider>
+    </>
   );
 }
 
