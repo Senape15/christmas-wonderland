@@ -64,6 +64,12 @@ const MENU_GROUPS = [
         icon: "home" as NavIconName,
       },
       {
+        href: "/dashboard/villaggio",
+        label: "Villaggio 3D",
+        description: "Gira, esplora e segui Nico",
+        icon: "map" as NavIconName,
+      },
+      {
         href: "/dashboard#mappa",
         label: "Mappa del villaggio",
         description: "Esplora le sei zone",

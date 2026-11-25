@@ -543,6 +543,13 @@ export function DashboardContent({
                     <NavIcon name="calendar" className="h-4 w-4" />
                     Calendario
                   </Link>
+                  <Link
+                    href="/dashboard/villaggio"
+                    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-gold/35 bg-gold/10 px-4 py-2.5 text-sm font-semibold text-gold-light transition-colors hover:border-gold hover:bg-gold/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
+                  >
+                    <NavIcon name="map" className="h-4 w-4" />
+                    Villaggio 3D
+                  </Link>
                 </div>
               </div>
             </div>
